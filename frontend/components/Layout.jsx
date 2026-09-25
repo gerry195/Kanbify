@@ -5,6 +5,7 @@ import {
   Home,
   LayoutGrid,
   ChartNoAxesColumnIncreasing,
+  CalendarDays,
   Users,
   Settings,
   Menu
@@ -25,6 +26,11 @@ const NAV_ITEMS = [
     id: 'stats',
     label: 'Statistik Tim',
     icon: ChartNoAxesColumnIncreasing
+  },
+  {
+    id: 'schedule',
+    label: 'Schedule',
+    icon: CalendarDays
   },
   {
     id: 'members',

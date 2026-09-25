@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../utils/api';
-import { useAuth } from '../contexts/AuthContext';
 import BoardCard from '../components/BoardCard';
 
 import {
@@ -14,17 +13,28 @@ import {
   FolderOpen
 } from 'lucide-react';
 
-const CATEGORIES = ['Umum', 'Desain', 'Pemasaran', 'Pengembangan'];
+const CATEGORIES = [
+  'Umum',
+  'Desain',
+  'Pemasaran',
+  'Pengembangan'
+];
+
+/* =========================================================
+   STAT CARD
+   ========================================================= */
 
 function StatCard({ icon: Icon, label, value, tag }) {
   return (
     <div
       style={{
-        background: '#fff',
+        flex: '1 1 190px',
+        minWidth: 0,
+        background: '#ffffff',
+        border: '1px solid #e8e5de',
         borderRadius: 14,
         padding: '16px 18px',
-        border: '1px solid #ece9e1',
-        flex: '1 1 180px'
+        boxSizing: 'border-box'
       }}
     >
       <div
@@ -37,28 +47,29 @@ function StatCard({ icon: Icon, label, value, tag }) {
       >
         <div
           style={{
-            width: 34,
-            height: 34,
+            width: 35,
+            height: 35,
             borderRadius: 10,
-            background: '#fdf1e7',
+            background: '#fff1e7',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            flexShrink: 0
           }}
         >
           <Icon
             size={17}
             strokeWidth={2}
-            color="#f97316"
+            color="#ff6b0b"
           />
         </div>
 
         <span
           style={{
             fontSize: 9.5,
-            fontWeight: 700,
-            color: '#a8a8a3',
-            letterSpacing: '0.5px'
+            fontWeight: 600,
+            color: '#99958e',
+            letterSpacing: '0.3px'
           }}
         >
           {tag}
@@ -69,8 +80,8 @@ function StatCard({ icon: Icon, label, value, tag }) {
         style={{
           fontSize: 24,
           fontWeight: 700,
-          color: '#1e1e1e',
-          lineHeight: 1
+          lineHeight: 1,
+          color: '#151515'
         }}
       >
         {value}
@@ -79,8 +90,8 @@ function StatCard({ icon: Icon, label, value, tag }) {
       <div
         style={{
           fontSize: 11.5,
-          color: '#8a8a86',
-          marginTop: 5
+          color: '#8e8b85',
+          marginTop: 6
         }}
       >
         {label}
@@ -89,20 +100,36 @@ function StatCard({ icon: Icon, label, value, tag }) {
   );
 }
 
-export default function DashboardPage({ onSelectBoard, onNavigate }) {
-  const { user } = useAuth();
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
 
+export default function DashboardPage({
+  onSelectBoard,
+  onNavigate
+}) {
   const [boards, setBoards] = useState([]);
   const [stats, setStats] = useState(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  /* =======================================================
+     CREATE BOARD STATE
+     ======================================================= */
 
   const [showModal, setShowModal] = useState(false);
   const [boardName, setBoardName] = useState('');
   const [category, setCategory] = useState('Umum');
+
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+
   const [submitting, setSubmitting] = useState(false);
+
+  /* =======================================================
+     LOAD DATA
+     ======================================================= */
 
   useEffect(() => {
     loadAll();
@@ -111,6 +138,7 @@ export default function DashboardPage({ onSelectBoard, onNavigate }) {
   const loadAll = async () => {
     try {
       setLoading(true);
+      setError('');
 
       const [boardsData, statsData] = await Promise.all([
         api.getBoards(),
@@ -120,20 +148,30 @@ export default function DashboardPage({ onSelectBoard, onNavigate }) {
       setBoards(boardsData);
       setStats(statsData);
     } catch (err) {
-      setError(err.message || 'Gagal memuat dashboard');
+      setError(
+        err.message || 'Gagal memuat dashboard'
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
+  /* =======================================================
+     IMAGE
+     ======================================================= */
 
-    if (file) {
-      setSelectedImage(file);
-      setImagePreview(URL.createObjectURL(file));
-    }
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    setSelectedImage(file);
+    setImagePreview(URL.createObjectURL(file));
   };
+
+  /* =======================================================
+     CREATE BOARD
+     ======================================================= */
 
   const handleCreateBoard = async (e) => {
     e.preventDefault();
@@ -145,37 +183,65 @@ export default function DashboardPage({ onSelectBoard, onNavigate }) {
 
       const formData = new FormData();
 
-      formData.append('name', boardName);
-      formData.append('category', category);
+      formData.append(
+        'name',
+        boardName.trim()
+      );
+
+      formData.append(
+        'category',
+        category
+      );
 
       if (selectedImage) {
-        formData.append('cover_image', selectedImage);
+        formData.append(
+          'cover_image',
+          selectedImage
+        );
       }
 
       await api.createBoard(formData);
 
-      setBoardName('');
-      setCategory('Umum');
-      setSelectedImage(null);
-      setImagePreview(null);
-      setShowModal(false);
+      resetModal();
 
-      loadAll();
+      await loadAll();
     } catch (err) {
-      alert(err.message || 'Gagal membuat board');
+      alert(
+        err.message ||
+        'Gagal membuat board'
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
+  /* =======================================================
+     RESET MODAL
+     ======================================================= */
+
+  const resetModal = () => {
+    setBoardName('');
+    setCategory('Umum');
+    setSelectedImage(null);
+    setImagePreview(null);
+    setShowModal(false);
+  };
+
+  /* =======================================================
+     LOADING
+     ======================================================= */
+
   if (loading) {
     return (
       <div
         style={{
-          padding: 40,
-          textAlign: 'center',
-          color: '#8a8a86',
-          fontFamily: 'system-ui'
+          minHeight: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#8e8b85',
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: 13
         }}
       >
         Memuat Dashboard Kanbify...
@@ -183,416 +249,656 @@ export default function DashboardPage({ onSelectBoard, onNavigate }) {
     );
   }
 
-  const starredBoards = boards.filter((b) => b.starred);
+  /* =======================================================
+     BOARD DATA
+     ======================================================= */
+
+  const starredBoards = boards.filter(
+    (board) => board.starred
+  );
+
   const boardsToShow =
-    starredBoards.length > 0 ? starredBoards : boards;
+    starredBoards.length > 0
+      ? starredBoards
+      : boards;
+
+  /* =======================================================
+     PAGE
+     ======================================================= */
 
   return (
     <div
       style={{
-        padding: '28px 34px',
-        maxWidth: 1200,
-        margin: '0 auto',
-        fontFamily: 'system-ui, sans-serif'
+        width: '100%',
+        minHeight: '100%',
+        background: '#f4f3ee',
+        padding: '22px 22px 50px',
+        boxSizing: 'border-box',
+        fontFamily:
+          'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
       }}
     >
-      {/* Breadcrumb */}
-      <div
-        style={{
-          fontSize: 11.5,
-          color: '#a8a8a3',
-          marginBottom: 4
-        }}
-      >
-        Home{' '}
-        <span style={{ color: '#c7c7c1' }}>›</span>{' '}
-        <span
-          style={{
-            color: '#f97316',
-            fontWeight: 600
-          }}
-        >
-          Dashboard
-        </span>
-      </div>
 
-      {/* Top bar */}
+      {/* =================================================
+          PAGE HEADER
+          ================================================= */}
+
       <div
         style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: 24
+          maxWidth: 1100,
+          margin: '0 auto'
         }}
       >
-        <h1
+
+        {/* Breadcrumb */}
+
+        <div
           style={{
-            fontSize: 24,
-            fontWeight: 700,
-            margin: 0,
-            color: '#1e1e1e'
+            fontSize: 11.5,
+            color: '#aaa69e',
+            marginBottom: 5
           }}
         >
-          Dashboard Utama
-        </h1>
+          Home
+          <span
+            style={{
+              margin: '0 4px',
+              color: '#c5c1b9'
+            }}
+          >
+            ›
+          </span>
+
+          <span
+            style={{
+              color: '#ff6b0b',
+              fontWeight: 600
+            }}
+          >
+            Dashboard
+          </span>
+        </div>
+
+        {/* Title + Actions */}
 
         <div
           style={{
             display: 'flex',
+            justifyContent: 'space-between',
             alignItems: 'center',
-            gap: 12
+            gap: 20,
+            marginBottom: 28
           }}
         >
-          {/* Notification */}
-          <button
+
+          <h1
             style={{
-              width: 38,
-              height: 38,
-              borderRadius: '50%',
-              border: '1px solid #ece9e1',
-              background: '#fff',
-              cursor: 'pointer',
+              margin: 0,
+              fontSize: 24,
+              lineHeight: 1.15,
+              fontWeight: 700,
+              color: '#151515',
+              letterSpacing: '-0.4px'
+            }}
+          >
+            Dashboard Utama
+          </h1>
+
+          <div
+            style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              gap: 12,
+              flexShrink: 0
             }}
-            title="Notifikasi"
           >
-            <Bell
-              size={16}
-              strokeWidth={2}
-              color="#f97316"
-            />
-          </button>
 
-          {/* Create board */}
-          <button
-            onClick={() => setShowModal(true)}
+            {/* Notification */}
+
+            <button
+              type="button"
+              title="Notifikasi"
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: '50%',
+                border: '1px solid #e6e2da',
+                background: '#ffffff',
+                color: '#ff6b0b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                padding: 0
+              }}
+            >
+              <Bell
+                size={16}
+                strokeWidth={1.8}
+              />
+            </button>
+
+            {/* Create Board */}
+
+            <button
+              type="button"
+              onClick={() =>
+                setShowModal(true)
+              }
+              style={{
+                border: 'none',
+                background: '#ff6b0b',
+                color: '#ffffff',
+                borderRadius: 10,
+                padding: '11px 16px',
+                fontSize: 12.5,
+                fontWeight: 650,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 7,
+                boxShadow:
+                  '0 5px 12px rgba(255,107,11,0.22)'
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 17,
+                  lineHeight: 1,
+                  fontWeight: 500
+                }}
+              >
+                +
+              </span>
+
+              Buat Board Baru
+            </button>
+
+          </div>
+        </div>
+
+        {/* =================================================
+            ERROR
+            ================================================= */}
+
+        {error && (
+          <div
             style={{
-              backgroundColor: '#f97316',
-              color: '#fff',
-              border: 'none',
-              padding: '11px 18px',
+              background: '#fff1f1',
+              border: '1px solid #ffd7d7',
+              color: '#b91c1c',
+              padding: '11px 13px',
               borderRadius: 10,
-              fontWeight: 600,
-              fontSize: 13,
-              cursor: 'pointer',
+              marginBottom: 20,
+              fontSize: 12.5,
               display: 'flex',
               alignItems: 'center',
-              gap: 7,
-              boxShadow:
-                '0 4px 10px -2px rgba(249,115,22,0.4)'
+              gap: 8
             }}
           >
-            <span style={{ fontSize: 18, lineHeight: 1 }}>
-              +
-            </span>
+            <TriangleAlert size={16} />
+            {error}
+          </div>
+        )}
 
-            Buat Board Baru
-          </button>
-        </div>
-      </div>
+        {/* =================================================
+            STATISTICS
+            ================================================= */}
 
-      {/* Error */}
-      {error && (
         <div
           style={{
-            backgroundColor: '#fef2f2',
-            color: '#b91c1c',
-            padding: 12,
-            borderRadius: 8,
-            marginBottom: 20,
-            fontSize: 13,
             display: 'flex',
-            alignItems: 'center',
-            gap: 8
+            gap: 16,
+            flexWrap: 'wrap',
+            marginBottom: 32
           }}
         >
-          <TriangleAlert size={16} />
-          {error}
-        </div>
-      )}
 
-      {/* Stat cards */}
-      <div
-        style={{
-          display: 'flex',
-          gap: 16,
-          marginBottom: 30,
-          flexWrap: 'wrap'
-        }}
-      >
-        <StatCard
-          icon={ClipboardList}
-          tag="TASK"
-          value={stats?.total_tasks ?? 0}
-          label="Aktif minggu ini"
-        />
+          <StatCard
+            icon={ClipboardList}
+            tag="TASK"
+            value={
+              stats?.total_tasks ?? 0
+            }
+            label="Aktif minggu ini"
+          />
 
-        <StatCard
-          icon={FilePenLine}
-          tag="TO DO"
-          value={stats?.todo_tasks ?? 0}
-          label="Aktif minggu ini"
-        />
+          <StatCard
+            icon={FilePenLine}
+            tag="TO DO"
+            value={
+              stats?.todo_tasks ?? 0
+            }
+            label="Aktif minggu ini"
+          />
 
-        <StatCard
-          icon={Timer}
-          tag="ON PROGRESS"
-          value={stats?.in_progress_tasks ?? 0}
-          label="Aktif minggu ini"
-        />
+          <StatCard
+            icon={Timer}
+            tag="ON PROGRESS"
+            value={
+              stats?.in_progress_tasks ?? 0
+            }
+            label="Aktif minggu ini"
+          />
 
-        <StatCard
-          icon={CircleCheck}
-          tag="DONE"
-          value={stats?.completed_tasks ?? 0}
-          label="Aktif minggu ini"
-        />
-      </div>
+          <StatCard
+            icon={CircleCheck}
+            tag="DONE"
+            value={
+              stats?.completed_tasks ?? 0
+            }
+            label="Aktif minggu ini"
+          />
 
-      {/* Starred boards */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-end',
-          marginBottom: 16
-        }}
-      >
-        <div>
-          <h2
-            style={{
-              fontSize: 16,
-              fontWeight: 700,
-              color: '#1e1e1e',
-              margin: 0
-            }}
-          >
-            Stared Board
-          </h2>
-
-          <p
-            style={{
-              fontSize: 12,
-              color: '#a8a8a3',
-              margin: '3px 0 0 0'
-            }}
-          >
-            {starredBoards.length > 0
-              ? 'Kelola proyek kolaboratif tim Anda secara visual'
-              : 'Belum ada board yang di-star — menampilkan semua board Anda'}
-          </p>
         </div>
 
-        <button
-          onClick={() =>
-            onNavigate && onNavigate('allboards')
-          }
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#f97316',
-            fontWeight: 600,
-            fontSize: 12.5,
-            cursor: 'pointer'
-          }}
-        >
-          Lihat Semua Board →
-        </button>
-      </div>
+        {/* =================================================
+            STARRED BOARD HEADER
+            ================================================= */}
 
-      {/* Boards */}
-      {boardsToShow.length === 0 ? (
         <div
           style={{
-            textAlign: 'center',
-            padding: '60px 20px',
-            border: '2px dashed #ece9e1',
-            borderRadius: 16,
-            color: '#8a8a86'
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-end',
+            gap: 20,
+            marginBottom: 15
           }}
         >
-          <p
-            style={{
-              fontSize: 15,
-              margin: '0 0 12px 0'
-            }}
-          >
-            Belum ada papan kerja kanban.
-          </p>
+
+          <div>
+
+            <h2
+              style={{
+                margin: 0,
+                fontSize: 15.5,
+                fontWeight: 700,
+                color: '#151515'
+              }}
+            >
+              Stared Board
+            </h2>
+
+            <p
+              style={{
+                margin:
+                  '4px 0 0 0',
+                fontSize: 11.5,
+                color: '#a09c94'
+              }}
+            >
+              {starredBoards.length > 0
+                ? 'Kelola proyek kolaboratif tim Anda secara visual'
+                : 'Belum ada board yang di-star — menampilkan semua board Anda'}
+            </p>
+
+          </div>
 
           <button
-            onClick={() => setShowModal(true)}
+            type="button"
+            onClick={() =>
+              onNavigate &&
+              onNavigate('allboards')
+            }
             style={{
-              background: 'none',
               border: 'none',
-              color: '#f97316',
-              fontWeight: 700,
+              background: 'transparent',
+              color: '#ff6b0b',
+              fontSize: 12,
+              fontWeight: 600,
               cursor: 'pointer',
-              textDecoration: 'underline'
+              padding: '4px 0',
+              whiteSpace: 'nowrap'
             }}
           >
-            Buat papan kerja pertamamu sekarang
+            Lihat Semua Board →
           </button>
-        </div>
-      ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns:
-              'repeat(auto-fill, minmax(270px, 1fr))',
-            gap: 20
-          }}
-        >
-          {boardsToShow.map((board) => (
-            <BoardCard
-              key={board.id}
-              board={board}
-              onOpen={onSelectBoard}
-              onChanged={loadAll}
-            />
-          ))}
-        </div>
-      )}
 
-      {/* Create Board Modal */}
+        </div>
+
+        {/* =================================================
+            BOARD GRID
+            ================================================= */}
+
+        {boardsToShow.length === 0 ? (
+
+          <div
+            style={{
+              background: '#ffffff',
+              border:
+                '1px dashed #dcd8cf',
+              borderRadius: 14,
+              minHeight: 240,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              padding: 30,
+              boxSizing: 'border-box'
+            }}
+          >
+
+            <div
+              style={{
+                width: 46,
+                height: 46,
+                borderRadius: 12,
+                background: '#fff1e7',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 12
+              }}
+            >
+              <ClipboardList
+                size={21}
+                color="#ff6b0b"
+                strokeWidth={1.8}
+              />
+            </div>
+
+            <p
+              style={{
+                margin:
+                  '0 0 10px',
+                fontSize: 13.5,
+                color: '#55524c',
+                fontWeight: 500
+              }}
+            >
+              Belum ada papan kerja kanban.
+            </p>
+
+            <button
+              type="button"
+              onClick={() =>
+                setShowModal(true)
+              }
+              style={{
+                border: 'none',
+                background: 'transparent',
+                color: '#ff6b0b',
+                fontSize: 12.5,
+                fontWeight: 650,
+                cursor: 'pointer',
+                textDecoration: 'underline'
+              }}
+            >
+              Buat papan kerja pertamamu sekarang
+            </button>
+
+          </div>
+
+        ) : (
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns:
+                'repeat(auto-fill, minmax(285px, 1fr))',
+              gap: 20,
+              alignItems: 'start'
+            }}
+          >
+
+            {boardsToShow.map(
+              (board) => (
+                <BoardCard
+                  key={board.id}
+                  board={board}
+                  onOpen={
+                    onSelectBoard
+                  }
+                  onChanged={
+                    loadAll
+                  }
+                />
+              )
+            )}
+
+          </div>
+
+        )}
+
+      </div>
+
+      {/* ===================================================
+          CREATE BOARD MODAL
+          =================================================== */}
+
       {showModal && (
+
         <div
           style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.4)',
+            inset: 0,
+            background:
+              'rgba(15,15,15,0.42)',
+            backdropFilter:
+              'blur(4px)',
             display: 'flex',
-            justifyContent: 'center',
             alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
             zIndex: 1000,
-            backdropFilter: 'blur(4px)'
+            boxSizing: 'border-box'
+          }}
+          onMouseDown={(e) => {
+            if (
+              e.target ===
+              e.currentTarget
+            ) {
+              resetModal();
+            }
           }}
         >
+
           <div
             style={{
-              backgroundColor: '#fff',
-              borderRadius: 20,
-              padding: 28,
               width: 420,
-              maxWidth: '90%',
+              maxWidth: '100%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              background: '#ffffff',
+              borderRadius: 18,
+              padding: 25,
+              boxSizing: 'border-box',
               boxShadow:
-                '0 20px 25px -5px rgba(0,0,0,0.1)'
+                '0 24px 60px rgba(0,0,0,0.18)'
             }}
           >
-            <h2
+
+            {/* Modal Header */}
+
+            <div
               style={{
-                fontSize: 18,
-                fontWeight: 700,
-                color: '#1e1e1e',
-                margin: '0 0 20px 0'
+                marginBottom: 20
               }}
             >
-              Buat Board Baru
-            </h2>
 
-            <form onSubmit={handleCreateBoard}>
-              <div style={{ marginBottom: 16 }}>
-                <label style={fieldLabel}>
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: '#171717'
+                }}
+              >
+                Buat Board Baru
+              </h2>
+
+              <p
+                style={{
+                  margin:
+                    '5px 0 0',
+                  fontSize: 12,
+                  color: '#99958e'
+                }}
+              >
+                Buat papan kerja baru untuk
+                mengatur tugasmu.
+              </p>
+
+            </div>
+
+            <form
+              onSubmit={
+                handleCreateBoard
+              }
+            >
+
+              {/* Board Name */}
+
+              <div
+                style={{
+                  marginBottom: 16
+                }}
+              >
+
+                <label
+                  style={fieldLabel}
+                >
                   Nama Board
                 </label>
 
                 <input
                   type="text"
-                  placeholder="Contoh: Proyek Skripsi, Redesign Aplikasi"
+                  placeholder="Contoh: Proyek Skripsi"
                   value={boardName}
                   onChange={(e) =>
-                    setBoardName(e.target.value)
+                    setBoardName(
+                      e.target.value
+                    )
                   }
                   required
                   style={fieldInput}
                 />
+
               </div>
 
-              <div style={{ marginBottom: 16 }}>
-                <label style={fieldLabel}>
+              {/* Category */}
+
+              <div
+                style={{
+                  marginBottom: 16
+                }}
+              >
+
+                <label
+                  style={fieldLabel}
+                >
                   Kategori
                 </label>
 
                 <select
                   value={category}
                   onChange={(e) =>
-                    setCategory(e.target.value)
+                    setCategory(
+                      e.target.value
+                    )
                   }
                   style={fieldInput}
                 >
-                  {CATEGORIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
+
+                  {CATEGORIES.map(
+                    (item) => (
+                      <option
+                        key={item}
+                        value={item}
+                      >
+                        {item}
+                      </option>
+                    )
+                  )}
+
                 </select>
+
               </div>
 
-              <div style={{ marginBottom: 24 }}>
-                <label style={fieldLabel}>
+              {/* Cover */}
+
+              <div
+                style={{
+                  marginBottom: 22
+                }}
+              >
+
+                <label
+                  style={fieldLabel}
+                >
                   Cover Image
                 </label>
 
                 <input
+                  id="board-cover-input"
                   type="file"
                   accept="image/*"
-                  onChange={handleImageChange}
-                  style={{ display: 'none' }}
-                  id="board-cover-input"
+                  onChange={
+                    handleImageChange
+                  }
+                  style={{
+                    display: 'none'
+                  }}
                 />
 
                 <label
                   htmlFor="board-cover-input"
                   style={{
-                    display: 'block',
-                    padding: 14,
-                    border: '2px dashed #ece9e1',
-                    borderRadius: 10,
-                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection:
+                      'column',
+                    alignItems: 'center',
+                    justifyContent:
+                      'center',
+                    minHeight: 88,
+                    border:
+                      '2px dashed #e4e0d8',
+                    borderRadius: 11,
+                    background:
+                      '#faf9f6',
+                    color: '#8f8b84',
                     cursor: 'pointer',
-                    backgroundColor: '#fafaf7',
-                    color: '#8a8a86',
-                    fontSize: 13
+                    fontSize: 12.5,
+                    gap: 6
                   }}
                 >
+
                   {imagePreview ? (
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 7
-                      }}
-                    >
-                      <RefreshCw size={15} />
-                      Ganti Gambar
-                    </span>
+                    <>
+                      <RefreshCw
+                        size={17}
+                        color="#ff6b0b"
+                      />
+
+                      <span>
+                        Ganti Gambar
+                      </span>
+                    </>
                   ) : (
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 7
-                      }}
-                    >
-                      <FolderOpen size={15} />
-                      Pilih dari File Explorer
-                    </span>
+                    <>
+                      <FolderOpen
+                        size={18}
+                        color="#ff6b0b"
+                      />
+
+                      <span>
+                        Pilih dari File Explorer
+                      </span>
+                    </>
                   )}
+
                 </label>
 
                 {imagePreview && (
                   <div
                     style={{
-                      marginTop: 12,
+                      marginTop: 10,
+                      height: 110,
                       borderRadius: 10,
                       overflow: 'hidden',
-                      height: 110,
-                      border: '1px solid #ece9e1'
+                      border:
+                        '1px solid #e7e3db'
                     }}
                   >
                     <img
@@ -606,29 +912,37 @@ export default function DashboardPage({ onSelectBoard, onNavigate }) {
                     />
                   </div>
                 )}
+
               </div>
+
+              {/* Buttons */}
 
               <div
                 style={{
                   display: 'flex',
-                  gap: 12,
-                  justifyContent: 'flex-end'
+                  justifyContent:
+                    'flex-end',
+                  gap: 10
                 }}
               >
+
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowModal(false);
-                    setImagePreview(null);
-                    setSelectedImage(null);
-                  }}
+                  onClick={
+                    resetModal
+                  }
                   style={{
-                    padding: '10px 16px',
-                    borderRadius: 10,
-                    border: '1px solid #ece9e1',
-                    backgroundColor: '#fff',
+                    padding:
+                      '10px 16px',
+                    borderRadius: 9,
+                    border:
+                      '1px solid #e3dfd7',
+                    background:
+                      '#ffffff',
+                    color: '#55524c',
                     cursor: 'pointer',
-                    fontSize: 13.5
+                    fontSize: 12.5,
+                    fontWeight: 500
                   }}
                 >
                   Batal
@@ -636,47 +950,68 @@ export default function DashboardPage({ onSelectBoard, onNavigate }) {
 
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={
+                    submitting
+                  }
                   style={{
-                    padding: '10px 20px',
-                    borderRadius: 10,
+                    padding:
+                      '10px 18px',
+                    borderRadius: 9,
                     border: 'none',
-                    backgroundColor: '#f97316',
-                    color: '#fff',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    fontSize: 13.5,
-                    opacity: submitting ? 0.7 : 1
+                    background:
+                      '#ff6b0b',
+                    color: '#ffffff',
+                    cursor:
+                      submitting
+                        ? 'default'
+                        : 'pointer',
+                    fontSize: 12.5,
+                    fontWeight: 650,
+                    opacity:
+                      submitting
+                        ? 0.7
+                        : 1
                   }}
                 >
                   {submitting
                     ? 'Membuat...'
                     : 'Buat Board'}
                 </button>
+
               </div>
+
             </form>
+
           </div>
+
         </div>
+
       )}
+
     </div>
   );
 }
 
+/* =========================================================
+   FORM STYLES
+   ========================================================= */
+
 const fieldLabel = {
   display: 'block',
-  fontSize: 12.5,
+  marginBottom: 6,
+  fontSize: 12,
   fontWeight: 600,
-  color: '#4b4b47',
-  marginBottom: 6
+  color: '#4d4a45'
 };
 
 const fieldInput = {
   width: '100%',
-  padding: 11,
-  borderRadius: 10,
-  border: '1px solid #ece9e1',
-  fontSize: 13.5,
-  outline: 'none',
   boxSizing: 'border-box',
-  background: '#fff'
+  padding: '10px 11px',
+  borderRadius: 9,
+  border: '1px solid #e1ddd5',
+  background: '#ffffff',
+  color: '#252525',
+  fontSize: 12.5,
+  outline: 'none'
 };

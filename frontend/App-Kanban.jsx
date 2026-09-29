@@ -70,17 +70,58 @@ function AutoGrowTextarea({ value, onChange, onBlur, placeholder }) {
   );
 }
 
+// ─── Date helpers ───────────────────────────────────────────────
+function toDateKey(value) {
+  if (!value) return "";
+  const raw = String(value);
+  // Laravel's date:Y-m-d cast normally returns YYYY-MM-DD. If a full
+  // datetime ever arrives, only use its date portion to avoid timezone shifts.
+  return raw.length >= 10 ? raw.slice(0, 10) : raw;
+}
+
+function formatDateLabel(dateKey) {
+  if (!dateKey) return "";
+  const [y, m, d] = dateKey.split("-").map(Number);
+  if (!y || !m || !d) return dateKey;
+  return new Date(y, m - 1, d).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 // ─── MiniCalendar ───────────────────────────────────────────────
-function MiniCalendar() {
+function MiniCalendar({ quests = [] }) {
   const today = new Date();
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   const [cur, setCur] = useState({ year: today.getFullYear(), month: today.getMonth() });
+  const [selectedDate, setSelectedDate] = useState(todayKey);
+
   const firstDay = getFirstDayOfMonth(cur.year, cur.month);
   const daysInMonth = getDaysInMonth(cur.year, cur.month);
-  const prevMonth = () => setCur(c => c.month === 0 ? { year: c.year-1, month: 11 } : { ...c, month: c.month-1 });
-  const nextMonth = () => setCur(c => c.month === 11 ? { year: c.year+1, month: 0 } : { ...c, month: c.month+1 });
+  const prevMonth = () => setCur(c => c.month === 0 ? { year: c.year - 1, month: 11 } : { ...c, month: c.month - 1 });
+  const nextMonth = () => setCur(c => c.month === 11 ? { year: c.year + 1, month: 0 } : { ...c, month: c.month + 1 });
+
+  const tasksByDate = quests.reduce((acc, task) => {
+    const key = toDateKey(task.due_date);
+    if (!key) return acc;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(task);
+    return acc;
+  }, {});
+
   const cells = [];
   for (let i = 0; i < firstDay; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const selectedTasks = tasksByDate[selectedDate] || [];
+
+  const handleSelectDate = (day) => {
+    if (!day) return;
+    const key = `${cur.year}-${String(cur.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    setSelectedDate(key);
+  };
+
   return (
     <div style={{ padding: "0 10px 12px" }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
@@ -88,23 +129,83 @@ function MiniCalendar() {
         <span style={{ fontSize:12, fontWeight:500, color:"var(--text-main)" }}>{MONTH_NAMES[cur.month]} {cur.year}</span>
         <button onClick={nextMonth} style={{ background:"none", border:"none", cursor:"pointer", color:"var(--text-muted)", fontSize:16, padding:"2px 6px" }}>›</button>
       </div>
+
       <div style={{ display:"grid", gridTemplateColumns:"repeat(7, 1fr)", gap:1 }}>
         {DAY_LABELS.map(d => (
           <div key={d} style={{ textAlign:"center", fontSize:10, color:"var(--text-muted)", padding:"2px 0" }}>{d}</div>
         ))}
         {cells.map((day, i) => {
-          const isToday = day && cur.year === today.getFullYear() && cur.month === today.getMonth() && day === today.getDate();
+          const key = day
+            ? `${cur.year}-${String(cur.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+            : "";
+          const hasTasks = Boolean(key && tasksByDate[key]?.length);
+          const isToday = key === todayKey;
+          const isSelected = key === selectedDate;
+
           return (
-            <div key={i} style={{
-              textAlign:"center", fontSize:11, width:24, height:24,
-              display:"flex", alignItems:"center", justifyContent:"center", margin:"auto",
-              borderRadius:"50%",
-              background: isToday ? "#667eea" : "transparent",
-              color: isToday ? "#fff" : day ? "var(--text-main)" : "transparent",
-              cursor: day ? "pointer" : "default",
-            }}>{day || ""}</div>
+            <button
+              key={i}
+              type="button"
+              onClick={() => handleSelectDate(day)}
+              disabled={!day}
+              title={hasTasks ? `${tasksByDate[key].length} tugas` : undefined}
+              style={{
+                position:"relative", border:"none", background: isSelected ? "#667eea" : "transparent",
+                color: isSelected ? "#fff" : day ? "var(--text-main)" : "transparent",
+                width:24, height:24, margin:"auto", borderRadius:"50%",
+                display:"flex", alignItems:"center", justifyContent:"center",
+                fontSize:11, cursor: day ? "pointer" : "default", padding:0,
+                fontWeight: isToday || isSelected ? 700 : 400,
+                outline: isToday && !isSelected ? "1px solid #667eea" : "none",
+                outlineOffset: -1,
+              }}
+            >
+              {day || ""}
+              {hasTasks && (
+                <span style={{
+                  position:"absolute", bottom:2, left:"50%", transform:"translateX(-50%)",
+                  width:4, height:4, borderRadius:"50%",
+                  background: isSelected ? "#fff" : "#f97316"
+                }} />
+              )}
+            </button>
           );
         })}
+      </div>
+
+      <div style={{ marginTop:10, borderTop:"0.5px solid var(--border)", paddingTop:9 }}>
+        <div style={{ fontSize:11, fontWeight:700, color:"var(--text-main)", marginBottom:7 }}>
+          {selectedDate ? formatDateLabel(selectedDate) : "Pilih tanggal"}
+        </div>
+
+        {selectedTasks.length === 0 ? (
+          <div style={{ fontSize:11, color:"var(--text-muted)", lineHeight:1.45 }}>
+            Tidak ada tugas dengan jadwal pada tanggal ini.
+          </div>
+        ) : (
+          selectedTasks.map(task => {
+            const priority = priorityStyle(task.priority);
+            return (
+              <div key={task.id} style={{
+                padding:"7px 8px", marginBottom:6, borderRadius:7,
+                background: task.color || "var(--bg-timer)",
+                border:`0.5px solid ${CARD_COLORS.find(c => c.bg === task.color)?.border || "var(--border)"}`,
+              }}>
+                <div style={{ fontSize:11.5, fontWeight:600, color:"var(--text-main)", lineHeight:1.35, wordBreak:"break-word" }}>
+                  {task.title}
+                </div>
+                <div style={{ display:"flex", alignItems:"center", gap:5, marginTop:5 }}>
+                  <span style={{ fontSize:9, fontWeight:700, padding:"2px 6px", borderRadius:999, background:priority.bg, color:priority.text }}>
+                    {priority.label}
+                  </span>
+                  <span style={{ fontSize:9.5, color:"var(--text-muted)" }}>
+                    {task.status === "done" ? "Selesai" : task.status === "in-progress" ? "Sedang dikerjakan" : task.status === "todo" ? "To Do" : "Backlog"}
+                  </span>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );
@@ -282,6 +383,7 @@ export default function App({ boardId, boardName, role = 'member', onBackToDashb
   const [addModal, setAddModal]       = useState(null); // { status } | null
   const [newTitle, setNewTitle]       = useState("");
   const [newPriority, setNewPriority] = useState("sedang");
+  const [newDueDate, setNewDueDate]   = useState("");
 
   // ── Fetch tasks ──
   useEffect(() => {
@@ -296,6 +398,7 @@ export default function App({ boardId, boardName, role = 'member', onBackToDashb
           isRunning: Boolean(t.is_running || t.isRunning),
           color:     t.color ?? null,
           priority:  t.priority ?? "sedang",
+          due_date:  toDateKey(t.due_date),
         }));
         setQuests(normalised);
       })
@@ -362,6 +465,7 @@ export default function App({ boardId, boardName, role = 'member', onBackToDashb
     if (!boardId) { alert("Board belum dimuat. Coba refresh."); return; }
     setNewTitle("");
     setNewPriority("sedang");
+    setNewDueDate("");
     setAddModal({ status: colId });
   };
 
@@ -371,12 +475,13 @@ export default function App({ boardId, boardName, role = 'member', onBackToDashb
     const colId = addModal.status;
     const shouldRun = colId === "in-progress";
     try {
-      const res = await api.createTask(newTitle.trim(), "", colId, null, boardId, null, 0, shouldRun, newPriority);
+      const res = await api.createTask(newTitle.trim(), "", colId, null, boardId, newDueDate || null, 0, shouldRun, newPriority);
       const normalise = (t) => ({
         ...t,
         title:     t.title     ?? newTitle.trim(),
         status:    t.status    ?? colId,
         priority:  t.priority  ?? newPriority,
+        due_date:  toDateKey(t.due_date ?? newDueDate),
         note:      t.description ?? t.note ?? "",
         time:      Number(t.time) || 0,
         isRunning: Boolean(t.is_running ?? shouldRun),
@@ -394,6 +499,7 @@ export default function App({ boardId, boardName, role = 'member', onBackToDashb
           isRunning: Boolean(t.is_running),
           color:     t.color ?? null,
           priority:  t.priority ?? "sedang",
+          due_date:  toDateKey(t.due_date),
         })));
       }
       setAddModal(null);
@@ -592,7 +698,7 @@ export default function App({ boardId, boardName, role = 'member', onBackToDashb
                 style={{ width:"100%", padding:10, borderRadius:8, border:"1px solid #e2e2dc", fontSize:13, outline:"none", boxSizing:"border-box", marginBottom:14 }} />
 
               <label style={{ display:"block", fontSize:12, fontWeight:600, color:"#4b4b47", marginBottom:6 }}>Prioritas</label>
-              <div style={{ display:"flex", gap:8, marginBottom:20 }}>
+              <div style={{ display:"flex", gap:8, marginBottom:16 }}>
                 {PRIORITIES.map(p => (
                   <button type="button" key={p.id} onClick={() => setNewPriority(p.id)} style={{
                     flex:1, padding:"8px 0", borderRadius:8, cursor:"pointer", fontSize:12, fontWeight:600,
@@ -601,6 +707,14 @@ export default function App({ boardId, boardName, role = 'member', onBackToDashb
                   }}>{p.label}</button>
                 ))}
               </div>
+
+              <label style={{ display:"block", fontSize:12, fontWeight:600, color:"#4b4b47", marginBottom:6 }}>Jadwal / Due Date</label>
+              <input
+                type="date"
+                value={newDueDate}
+                onChange={e => setNewDueDate(e.target.value)}
+                style={{ width:"100%", padding:"9px 10px", borderRadius:8, border:"1px solid #e2e2dc", fontSize:13, outline:"none", boxSizing:"border-box", marginBottom:20, color:"#2b2b29" }}
+              />
 
               <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
                 <button type="button" onClick={() => setAddModal(null)} style={{
@@ -694,6 +808,13 @@ export default function App({ boardId, boardName, role = 'member', onBackToDashb
                             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:6, marginBottom:8 }}>
                               <p style={{ margin:0, fontWeight:600, fontSize:13, color:"var(--text-main)", lineHeight:1.4, wordBreak:"break-word", flex:1 }}>{quest.title}</p>
                             </div>
+
+                            {quest.due_date && (
+                              <div style={{ fontSize:10.5, color:"var(--text-muted)", marginBottom:8, display:"flex", alignItems:"center", gap:5 }}>
+                                <span>Due:</span>
+                                <strong style={{ color:"var(--text-main)", fontWeight:600 }}>{formatDateLabel(toDateKey(quest.due_date))}</strong>
+                              </div>
+                            )}
 
                             <div style={{ display:"flex", flexDirection:"column", gap:4, marginBottom:10, background:"var(--bg-note-box)", padding:"6px 8px", borderRadius:6 }}>
                               <AutoGrowTextarea
@@ -801,7 +922,7 @@ export default function App({ boardId, boardName, role = 'member', onBackToDashb
                 )}
               </SideSection>
 
-              <SideSection title="Calendar"><MiniCalendar /></SideSection>
+              <SideSection title="Schedule"><MiniCalendar quests={quests} /></SideSection>
 
               <SideSection title="Completed Tasks Log">
                 <div style={{ padding:"12px 14px" }}>

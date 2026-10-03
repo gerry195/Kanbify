@@ -10,7 +10,10 @@ import {
   CircleCheck,
   TriangleAlert,
   RefreshCw,
-  FolderOpen
+  FolderOpen,
+  UserPlus,
+  X,
+  ArrowRight
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -128,6 +131,16 @@ export default function DashboardPage({
   const [submitting, setSubmitting] = useState(false);
 
   /* =======================================================
+     JOIN BOARD STATE
+     ======================================================= */
+
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [inviteCode, setInviteCode] = useState('');
+  const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState('');
+  const [joinSuccess, setJoinSuccess] = useState('');
+
+  /* =======================================================
      LOAD DATA
      ======================================================= */
 
@@ -216,7 +229,55 @@ export default function DashboardPage({
   };
 
   /* =======================================================
-     RESET MODAL
+     JOIN BOARD
+     ======================================================= */
+
+  const handleJoinBoard = async (e) => {
+    e.preventDefault();
+
+    const code = inviteCode.trim().toUpperCase();
+
+    if (!code) {
+      setJoinError('Masukkan kode undangan terlebih dahulu.');
+      return;
+    }
+
+    try {
+      setJoining(true);
+      setJoinError('');
+      setJoinSuccess('');
+
+      const response = await api.joinBoard(code);
+
+      setJoinSuccess(
+        response?.message ||
+        'Berhasil bergabung ke board.'
+      );
+
+      setInviteCode('');
+
+      /*
+       * Tunggu sebentar supaya user
+       * sempat melihat pesan berhasil.
+       */
+      setTimeout(async () => {
+        setShowJoinModal(false);
+        setJoinSuccess('');
+        await loadAll();
+      }, 700);
+
+    } catch (err) {
+      setJoinError(
+        err.message ||
+        'Gagal bergabung ke board.'
+      );
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  /* =======================================================
+     RESET CREATE MODAL
      ======================================================= */
 
   const resetModal = () => {
@@ -225,6 +286,18 @@ export default function DashboardPage({
     setSelectedImage(null);
     setImagePreview(null);
     setShowModal(false);
+  };
+
+  /* =======================================================
+     RESET JOIN MODAL
+     ======================================================= */
+
+  const resetJoinModal = () => {
+    setInviteCode('');
+    setJoinError('');
+    setJoinSuccess('');
+    setJoining(false);
+    setShowJoinModal(false);
   };
 
   /* =======================================================
@@ -300,6 +373,7 @@ export default function DashboardPage({
           }}
         >
           Home
+
           <span
             style={{
               margin: '0 4px',
@@ -348,7 +422,7 @@ export default function DashboardPage({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 12,
+              gap: 10,
               flexShrink: 0
             }}
           >
@@ -376,6 +450,35 @@ export default function DashboardPage({
                 size={16}
                 strokeWidth={1.8}
               />
+            </button>
+
+            {/* Join Board */}
+
+            <button
+              type="button"
+              onClick={() =>
+                setShowJoinModal(true)
+              }
+              style={{
+                border: '1px solid #e5e1d9',
+                background: '#ffffff',
+                color: '#3f3c37',
+                borderRadius: 10,
+                padding: '10px 14px',
+                fontSize: 12.5,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 7
+              }}
+            >
+              <UserPlus
+                size={15}
+                strokeWidth={1.9}
+              />
+
+              Gabung Board
             </button>
 
             {/* Create Board */}
@@ -976,6 +1079,333 @@ export default function DashboardPage({
                   {submitting
                     ? 'Membuat...'
                     : 'Buat Board'}
+                </button>
+
+              </div>
+
+            </form>
+
+          </div>
+
+        </div>
+
+      )}
+
+      {/* ===================================================
+          JOIN BOARD MODAL
+          =================================================== */}
+
+      {showJoinModal && (
+
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background:
+              'rgba(15,15,15,0.42)',
+            backdropFilter:
+              'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
+            zIndex: 1000,
+            boxSizing: 'border-box'
+          }}
+          onMouseDown={(e) => {
+            if (
+              e.target ===
+              e.currentTarget
+            ) {
+              resetJoinModal();
+            }
+          }}
+        >
+
+          <div
+            style={{
+              width: 420,
+              maxWidth: '100%',
+              background: '#ffffff',
+              borderRadius: 18,
+              padding: 25,
+              boxSizing: 'border-box',
+              boxShadow:
+                '0 24px 60px rgba(0,0,0,0.18)'
+            }}
+          >
+
+            {/* JOIN HEADER */}
+
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                gap: 15,
+                marginBottom: 20
+              }}
+            >
+
+              <div>
+
+                <div
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 11,
+                    background: '#fff1e7',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 12
+                  }}
+                >
+                  <UserPlus
+                    size={19}
+                    color="#ff6b0b"
+                    strokeWidth={1.9}
+                  />
+                </div>
+
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: 18,
+                    fontWeight: 700,
+                    color: '#171717'
+                  }}
+                >
+                  Gabung ke Board
+                </h2>
+
+                <p
+                  style={{
+                    margin:
+                      '5px 0 0',
+                    fontSize: 12,
+                    color: '#99958e',
+                    lineHeight: 1.5
+                  }}
+                >
+                  Masukkan kode undangan dari
+                  pemilik board untuk bergabung.
+                </p>
+
+              </div>
+
+              <button
+                type="button"
+                onClick={resetJoinModal}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  border: 'none',
+                  background: '#f5f4f1',
+                  color: '#77736c',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 0,
+                  flexShrink: 0
+                }}
+              >
+                <X
+                  size={17}
+                  strokeWidth={1.8}
+                />
+              </button>
+
+            </div>
+
+            <form
+              onSubmit={handleJoinBoard}
+            >
+
+              {/* INVITE CODE */}
+
+              <div
+                style={{
+                  marginBottom: 14
+                }}
+              >
+
+                <label
+                  style={fieldLabel}
+                >
+                  Kode Undangan
+                </label>
+
+                <input
+                  type="text"
+                  placeholder="Contoh: A7K9P2XM"
+                  value={inviteCode}
+                  onChange={(e) => {
+                    setInviteCode(
+                      e.target.value
+                        .toUpperCase()
+                        .replace(/\s/g, '')
+                    );
+
+                    setJoinError('');
+                    setJoinSuccess('');
+                  }}
+                  maxLength={20}
+                  autoFocus
+                  style={{
+                    ...fieldInput,
+                    fontSize: 16,
+                    fontWeight: 650,
+                    letterSpacing: '2px',
+                    textAlign: 'center',
+                    textTransform: 'uppercase'
+                  }}
+                />
+
+              </div>
+
+              {/* ERROR */}
+
+              {joinError && (
+                <div
+                  style={{
+                    background: '#fff1f1',
+                    border:
+                      '1px solid #ffd7d7',
+                    color: '#b91c1c',
+                    borderRadius: 9,
+                    padding:
+                      '10px 11px',
+                    fontSize: 11.5,
+                    lineHeight: 1.4,
+                    marginBottom: 14
+                  }}
+                >
+                  {joinError}
+                </div>
+              )}
+
+              {/* SUCCESS */}
+
+              {joinSuccess && (
+                <div
+                  style={{
+                    background: '#f0fdf4',
+                    border:
+                      '1px solid #bbf7d0',
+                    color: '#15803d',
+                    borderRadius: 9,
+                    padding:
+                      '10px 11px',
+                    fontSize: 11.5,
+                    lineHeight: 1.4,
+                    marginBottom: 14
+                  }}
+                >
+                  {joinSuccess}
+                </div>
+              )}
+
+              {/* INFO */}
+
+              {!joinError &&
+                !joinSuccess && (
+                  <div
+                    style={{
+                      background: '#faf9f6',
+                      border:
+                        '1px solid #ebe7df',
+                      borderRadius: 9,
+                      padding:
+                        '10px 11px',
+                      fontSize: 11,
+                      color: '#88847d',
+                      lineHeight: 1.5,
+                      marginBottom: 20
+                    }}
+                  >
+                    Kode undangan diberikan oleh
+                    admin atau pemilik board.
+                  </div>
+                )}
+
+              {/* BUTTONS */}
+
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent:
+                    'flex-end',
+                  gap: 10
+                }}
+              >
+
+                <button
+                  type="button"
+                  onClick={
+                    resetJoinModal
+                  }
+                  style={{
+                    padding:
+                      '10px 16px',
+                    borderRadius: 9,
+                    border:
+                      '1px solid #e3dfd7',
+                    background:
+                      '#ffffff',
+                    color: '#55524c',
+                    cursor: 'pointer',
+                    fontSize: 12.5,
+                    fontWeight: 500
+                  }}
+                >
+                  Batal
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={
+                    joining ||
+                    !inviteCode.trim()
+                  }
+                  style={{
+                    padding:
+                      '10px 17px',
+                    borderRadius: 9,
+                    border: 'none',
+                    background:
+                      '#ff6b0b',
+                    color: '#ffffff',
+                    cursor:
+                      joining ||
+                      !inviteCode.trim()
+                        ? 'default'
+                        : 'pointer',
+                    fontSize: 12.5,
+                    fontWeight: 650,
+                    opacity:
+                      joining ||
+                      !inviteCode.trim()
+                        ? 0.6
+                        : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 7
+                  }}
+                >
+                  {joining
+                    ? 'Bergabung...'
+                    : (
+                      <>
+                        Gabung Board
+                        <ArrowRight
+                          size={15}
+                          strokeWidth={1.9}
+                        />
+                      </>
+                    )}
                 </button>
 
               </div>

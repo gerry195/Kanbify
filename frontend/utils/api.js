@@ -78,26 +78,42 @@ class APIClient {
     return this.request('/user/profile', { method: 'DELETE' });
   }
 
-  // ── BOARDS ────────────────────────────────────────────
-  async getBoards() {
-    return this.request('/boards');
-  }
+// ── BOARDS ────────────────────────────────────────────
+async getBoards() {
+  return this.request('/boards');
+}
 
-  async createBoard(formData) {
-    return this.request('/boards', { method: 'POST', body: formData });
-  }
+async joinBoard(inviteCode) {
+  return this.request('/boards/join', {
+    method: 'POST',
+    body: JSON.stringify({
+      invite_code: inviteCode
+    })
+  });
+}
 
-  async getBoard(id) {
-    return this.request(`/boards/${id}`);
-  }
+async createBoard(formData) {
+  return this.request('/boards', {
+    method: 'POST',
+    body: formData
+  });
+}
 
-  async deleteBoard(boardId) {
-    return this.request(`/boards/${boardId}`, { method: 'DELETE' });
-  }
+async getBoard(id) {
+  return this.request(`/boards/${id}`);
+}
 
-  async toggleStarBoard(boardId) {
-    return this.request(`/boards/${boardId}/star`, { method: 'PUT' });
-  }
+async deleteBoard(boardId) {
+  return this.request(`/boards/${boardId}`, {
+    method: 'DELETE'
+  });
+}
+
+async toggleStarBoard(boardId) {
+  return this.request(`/boards/${boardId}/star`, {
+    method: 'PUT'
+  });
+}
 
   // ── BOARD MEMBERS (roles) ─────────────────────────────
   async getBoardMembers(boardId) {

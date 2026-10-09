@@ -11,7 +11,7 @@ class Task extends Model
 
     protected $fillable = [
         'board_id', 'user_id', 'title', 'description', 'status', 'priority',
-        'color', 'time', 'is_running', 'due_date', 'completed_at', 'assigned_user_id',
+        'color', 'time', 'is_running', 'due_date', 'completed_at',
     ];
 
     protected $casts = [
@@ -30,8 +30,13 @@ class Task extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function assignee()
+    public function assignees()
     {
-        return $this->belongsTo(User::class, 'assigned_user_id');
+    return $this->belongsToMany(
+        User::class,
+        'task_assignees',
+        'task_id',
+        'user_id'
+    )->withTimestamps();
     }
 }

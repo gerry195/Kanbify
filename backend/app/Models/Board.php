@@ -10,12 +10,12 @@ class Board extends Model
     use HasFactory;
 
     protected $fillable = [
-        'owner_id',
-        'name',
-        'category',
-        'cover_image',
-        'invite_code',
-    ];
+    'owner_id',
+    'name',
+    'category',
+    'cover_image',
+    'invite_code',
+];
 
     public function owner()
     {

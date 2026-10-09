@@ -11,7 +11,7 @@ class Task extends Model
 
     protected $fillable = [
         'board_id', 'user_id', 'title', 'description', 'status', 'priority',
-        'color', 'time', 'is_running', 'due_date', 'completed_at',
+        'color', 'time', 'is_running', 'due_date', 'completed_at', 'assigned_user_id',
     ];
 
     protected $casts = [
@@ -28,5 +28,10 @@ class Task extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function assignee()
+    {
+        return $this->belongsTo(User::class, 'assigned_user_id');
     }
 }

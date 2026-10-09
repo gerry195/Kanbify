@@ -143,7 +143,18 @@ async toggleStarBoard(boardId) {
     return this.request(`/boards/${boardId}/tasks`);
   }
 
-  async createTask(title, description, status, color, board_id, due_date, time = 0, is_running = false, priority = 'sedang') {
+  async createTask(
+    title,
+    description,
+    status,
+    color,
+    board_id,
+    due_date,
+    time = 0,
+    is_running = false,
+    priority = 'sedang',
+    assignees = []
+  ) {
     return this.request('/tasks', {
       method: 'POST',
       body: JSON.stringify({
@@ -155,24 +166,43 @@ async toggleStarBoard(boardId) {
         board_id,
         due_date,
         time: parseInt(time) || 0,
-        is_running: !!is_running
+        is_running: !!is_running,
+        assignees
       })
     });
   }
 
-  async updateTask(id, title, description, status, color, time, isRunning, due_date, priority) {
+  async updateTask(
+    id,
+    title,
+    description,
+    status,
+    color,
+    time,
+    isRunning,
+    due_date,
+    priority,
+    assignees
+  ) {
+    const payload = {
+      title,
+      description,
+      status,
+      priority,
+      color,
+      time: parseInt(time) || 0,
+      isRunning: !!isRunning,
+      due_date
+    };
+
+    // Kirim assignees hanya jika memang disediakan.
+    if (assignees !== undefined) {
+      payload.assignees = assignees;
+    }
+
     return this.request(`/tasks/${id}`, {
       method: 'PUT',
-      body: JSON.stringify({
-        title,
-        description,
-        status,
-        priority,
-        color,
-        time,
-        isRunning: !!isRunning,
-        due_date
-      })
+      body: JSON.stringify(payload)
     });
   }
 

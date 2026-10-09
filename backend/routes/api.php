@@ -23,6 +23,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/boards', [BoardController::class, 'index']);
     Route::post('/boards', [BoardController::class, 'store']);
     Route::get('/boards/{board}', [BoardController::class, 'show']);
+    Route::post('/boards/join', [BoardController::class, 'join']);
     Route::delete('/boards/{board}', [BoardController::class, 'destroy']);
     Route::put('/boards/{board}/star', [BoardController::class, 'toggleStar']);
 

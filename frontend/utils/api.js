@@ -103,6 +103,13 @@ async getBoard(id) {
   return this.request(`/boards/${id}`);
 }
 
+async updateBoardAppearance(boardId, formData) { return this.request(`/boards/${boardId}/appearance`, { method: 'POST', body: formData }); }
+async getCalendarTasks() { return this.request('/calendar/tasks'); }
+async getBoardFiles(boardId) { return this.request(`/boards/${boardId}/files`); }
+async uploadBoardFile(boardId, formData) { return this.request(`/boards/${boardId}/files`, { method: 'POST', body: formData }); }
+async downloadBoardFile(boardId, fileId) { const response = await fetch(`${API_URL}/boards/${boardId}/files/${fileId}/download`, { headers: this.getHeaders() }); if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.error || 'Gagal mengunduh file'); } return response.blob(); }
+async deleteBoardFile(boardId, fileId) { return this.request(`/boards/${boardId}/files/${fileId}`, { method: 'DELETE' }); }
+
 async deleteBoard(boardId) {
   return this.request(`/boards/${boardId}`, {
     method: 'DELETE'

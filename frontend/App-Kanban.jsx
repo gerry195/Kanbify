@@ -8,13 +8,13 @@ import { api } from "./utils/api.js";
 
 function getDaysInMonth(year, month) {
 
-  return new Date(year, month + 1, 0).getDate();
+  return new Date(year, month + 1, 0).getDate();
 
 }
 
 function getFirstDayOfMonth(year, month) {
 
-  return new Date(year, month, 1).getDay();
+  return new Date(year, month, 1).getDay();
 
 }
 
@@ -22,9 +22,9 @@ function getFirstDayOfMonth(year, month) {
 
 const MONTH_NAMES = [
 
-  "January","February","March","April","May","June",
+  "January","February","March","April","May","June",
 
-  "July","August","September","October","November","December"
+  "July","August","September","October","November","December"
 
 ];
 
@@ -34,21 +34,21 @@ const DAY_LABELS = ["Su","Mo","Tu","We","Th","Fr","Sa"];
 
 const CARD_COLORS = [
 
-  { label: "Default", bg: null,       border: null       },
+  { label: "Default", bg: null,       border: null       },
 
-  { label: "Red",     bg: "#fff0f0",  border: "#ffb3b3"  },
+  { label: "Red",     bg: "#fff0f0",  border: "#ffb3b3"  },
 
-  { label: "Orange",  bg: "#fff7f0",  border: "#ffc89a"  },
+  { label: "Orange",  bg: "#fff7f0",  border: "#ffc89a"  },
 
-  { label: "Yellow",  bg: "#fffbf0",  border: "#ffe08a"  },
+  { label: "Yellow",  bg: "#fffbf0",  border: "#ffe08a"  },
 
-  { label: "Green",   bg: "#f0fff6",  border: "#9adcb8"  },
+  { label: "Green",   bg: "#f0fff6",  border: "#9adcb8"  },
 
-  { label: "Blue",    bg: "#f0f5ff",  border: "#9ab8ff"  },
+  { label: "Blue",    bg: "#f0f5ff",  border: "#9ab8ff"  },
 
-  { label: "Purple",  bg: "#f8f0ff",  border: "#c9a0ff"  },
+  { label: "Purple",  bg: "#f8f0ff",  border: "#c9a0ff"  },
 
-  { label: "Pink",    bg: "#fff0f8",  border: "#ffabda"  },
+  { label: "Pink",    bg: "#fff0f8",  border: "#ffabda"  },
 
 ];
 
@@ -56,11 +56,11 @@ const CARD_COLORS = [
 
 const FIXED_COLUMNS = [
 
-  { id: "todo",         title: "To Do",       dot: "#3b82f6" },
+  { id: "todo",         title: "To Do",       dot: "#3b82f6" },
 
-  { id: "in-progress",  title: "In Progress", dot: "#f97316" },
+  { id: "in-progress",  title: "In Progress", dot: "#f97316" },
 
-  { id: "done",         title: "Done",        dot: "#16a34a" },
+  { id: "done",         title: "Done",        dot: "#16a34a" },
 
 ];
 
@@ -84,55 +84,55 @@ function priorityStyle(id) {
 
 function AutoGrowTextarea({ value, onChange, onBlur, placeholder }) {
 
-  const ref = useRef(null);
+  const ref = useRef(null);
 
-  useEffect(() => {
+  useEffect(() => {
 
-    if (ref.current) {
+    if (ref.current) {
 
-      ref.current.style.height = "auto";
+      ref.current.style.height = "auto";
 
-      ref.current.style.height = Math.max(60, ref.current.scrollHeight) + "px";
+      ref.current.style.height = Math.max(60, ref.current.scrollHeight) + "px";
 
-    }
+    }
 
-  }, [value]);
+  }, [value]);
 
-  return (
+  return (
 
-    <textarea
+    <textarea
 
-      ref={ref}
+      ref={ref}
 
-      value={value}
+      value={value}
 
-      onChange={onChange}
+      onChange={onChange}
 
-      onBlur={onBlur}
+      onBlur={onBlur}
 
-      onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); e.currentTarget.blur(); } }}
+      onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); e.currentTarget.blur(); } }}
 
-      placeholder={placeholder}
+      placeholder={placeholder}
 
-      style={{
+      style={{
 
-        border: "none", background: "transparent", outline: "none",
+        border: "none", background: "transparent", outline: "none",
 
-        fontSize: 11, color: "var(--text-main)", width: "100%",
+        fontSize: 11, color: "var(--text-main)", width: "100%",
 
-        resize: "none", fontFamily: "inherit", lineHeight: "1.4",
+        resize: "none", fontFamily: "inherit", lineHeight: "1.4",
 
-        wordBreak: "break-word", whiteSpace: "pre-wrap",
+        wordBreak: "break-word", whiteSpace: "pre-wrap",
 
-        overflowWrap: "break-word", wordWrap: "break-word",
+        overflowWrap: "break-word", wordWrap: "break-word",
 
-        minHeight: "60px", height: "auto", overflow: "hidden", display: "block"
+        minHeight: "60px", height: "auto", overflow: "hidden", display: "block"
 
-      }}
+      }}
 
-    />
+    />
 
-  );
+  );
 
 }
 
@@ -142,15 +142,15 @@ function AutoGrowTextarea({ value, onChange, onBlur, placeholder }) {
 
 function toDateKey(value) {
 
-  if (!value) return "";
+  if (!value) return "";
 
-  const raw = String(value);
+  const raw = String(value);
 
-  // Laravel's date:Y-m-d cast normally returns YYYY-MM-DD. If a full
+  // Laravel's date:Y-m-d cast normally returns YYYY-MM-DD. If a full
 
-  // datetime ever arrives, only use its date portion to avoid timezone shifts.
+  // datetime ever arrives, only use its date portion to avoid timezone shifts.
 
-  return raw.length >= 10 ? raw.slice(0, 10) : raw;
+  return raw.length >= 10 ? raw.slice(0, 10) : raw;
 
 }
 
@@ -158,21 +158,21 @@ function toDateKey(value) {
 
 function formatDateLabel(dateKey) {
 
-  if (!dateKey) return "";
+  if (!dateKey) return "";
 
-  const [y, m, d] = dateKey.split("-").map(Number);
+  const [y, m, d] = dateKey.split("-").map(Number);
 
-  if (!y || !m || !d) return dateKey;
+  if (!y || !m || !d) return dateKey;
 
-  return new Date(y, m - 1, d).toLocaleDateString("id-ID", {
+  return new Date(y, m - 1, d).toLocaleDateString("id-ID", {
 
-    day: "numeric",
+    day: "numeric",
 
-    month: "long",
+    month: "long",
 
-    year: "numeric",
+    year: "numeric",
 
-  });
+  });
 
 }
 
@@ -182,239 +182,239 @@ function formatDateLabel(dateKey) {
 
 function MiniCalendar({ quests = [] }) {
 
-  const today = new Date();
+  const today = new Date();
 
-  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
-  const [cur, setCur] = useState({ year: today.getFullYear(), month: today.getMonth() });
+  const [cur, setCur] = useState({ year: today.getFullYear(), month: today.getMonth() });
 
-  const [selectedDate, setSelectedDate] = useState(todayKey);
+  const [selectedDate, setSelectedDate] = useState(todayKey);
 
 
 
-  const firstDay = getFirstDayOfMonth(cur.year, cur.month);
+  const firstDay = getFirstDayOfMonth(cur.year, cur.month);
 
-  const daysInMonth = getDaysInMonth(cur.year, cur.month);
+  const daysInMonth = getDaysInMonth(cur.year, cur.month);
 
-  const prevMonth = () => setCur(c => c.month === 0 ? { year: c.year - 1, month: 11 } : { ...c, month: c.month - 1 });
+  const prevMonth = () => setCur(c => c.month === 0 ? { year: c.year - 1, month: 11 } : { ...c, month: c.month - 1 });
 
-  const nextMonth = () => setCur(c => c.month === 11 ? { year: c.year + 1, month: 0 } : { ...c, month: c.month + 1 });
+  const nextMonth = () => setCur(c => c.month === 11 ? { year: c.year + 1, month: 0 } : { ...c, month: c.month + 1 });
 
 
 
-  const tasksByDate = quests.reduce((acc, task) => {
+  const tasksByDate = quests.reduce((acc, task) => {
 
-    const key = toDateKey(task.due_date);
+    const key = toDateKey(task.due_date);
 
-    if (!key) return acc;
+    if (!key) return acc;
 
-    if (!acc[key]) acc[key] = [];
+    if (!acc[key]) acc[key] = [];
 
-    acc[key].push(task);
+    acc[key].push(task);
 
-    return acc;
+    return acc;
 
-  }, {});
+  }, {});
 
 
 
-  const cells = [];
+  const cells = [];
 
-  for (let i = 0; i < firstDay; i++) cells.push(null);
+  for (let i = 0; i < firstDay; i++) cells.push(null);
 
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
 
 
 
-  const selectedTasks = tasksByDate[selectedDate] || [];
+  const selectedTasks = tasksByDate[selectedDate] || [];
 
 
 
-  const handleSelectDate = (day) => {
+  const handleSelectDate = (day) => {
 
-    if (!day) return;
+    if (!day) return;
 
-    const key = `${cur.year}-${String(cur.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const key = `${cur.year}-${String(cur.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
-    setSelectedDate(key);
+    setSelectedDate(key);
 
-  };
+  };
 
 
 
-  return (
+  return (
 
-    <div style={{ padding: "0 10px 12px" }}>
+    <div style={{ padding: "0 10px 12px" }}>
 
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
 
-        <button onClick={prevMonth} style={{ background:"none", border:"none", cursor:"pointer", color:"var(--text-muted)", fontSize:16, padding:"2px 6px" }}>‹</button>
+        <button onClick={prevMonth} style={{ background:"none", border:"none", cursor:"pointer", color:"var(--text-muted)", fontSize:16, padding:"2px 6px" }}>‹</button>
 
-        <span style={{ fontSize:12, fontWeight:500, color:"var(--text-main)" }}>{MONTH_NAMES[cur.month]} {cur.year}</span>
+        <span style={{ fontSize:12, fontWeight:500, color:"var(--text-main)" }}>{MONTH_NAMES[cur.month]} {cur.year}</span>
 
-        <button onClick={nextMonth} style={{ background:"none", border:"none", cursor:"pointer", color:"var(--text-muted)", fontSize:16, padding:"2px 6px" }}>›</button>
+        <button onClick={nextMonth} style={{ background:"none", border:"none", cursor:"pointer", color:"var(--text-muted)", fontSize:16, padding:"2px 6px" }}>›</button>
 
-      </div>
+      </div>
 
 
 
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(7, 1fr)", gap:1 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(7, 1fr)", gap:1 }}>
 
-        {DAY_LABELS.map(d => (
+        {DAY_LABELS.map(d => (
 
-          <div key={d} style={{ textAlign:"center", fontSize:10, color:"var(--text-muted)", padding:"2px 0" }}>{d}</div>
+          <div key={d} style={{ textAlign:"center", fontSize:10, color:"var(--text-muted)", padding:"2px 0" }}>{d}</div>
 
-        ))}
+        ))}
 
-        {cells.map((day, i) => {
+        {cells.map((day, i) => {
 
-          const key = day
+          const key = day
 
-            ? `${cur.year}-${String(cur.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+            ? `${cur.year}-${String(cur.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
 
-            : "";
+            : "";
 
-          const hasTasks = Boolean(key && tasksByDate[key]?.length);
+          const hasTasks = Boolean(key && tasksByDate[key]?.length);
 
-          const isToday = key === todayKey;
+          const isToday = key === todayKey;
 
-          const isSelected = key === selectedDate;
+          const isSelected = key === selectedDate;
 
 
 
-          return (
+          return (
 
-            <button
+            <button
 
-              key={i}
+              key={i}
 
-              type="button"
+              type="button"
 
-              onClick={() => handleSelectDate(day)}
+              onClick={() => handleSelectDate(day)}
 
-              disabled={!day}
+              disabled={!day}
 
-              title={hasTasks ? `${tasksByDate[key].length} tugas` : undefined}
+              title={hasTasks ? `${tasksByDate[key].length} tugas` : undefined}
 
-              style={{
+              style={{
 
-                position:"relative", border:"none", background: isSelected ? "#667eea" : "transparent",
+                position:"relative", border:"none", background: isSelected ? "#667eea" : "transparent",
 
-                color: isSelected ? "#fff" : day ? "var(--text-main)" : "transparent",
+                color: isSelected ? "#fff" : day ? "var(--text-main)" : "transparent",
 
-                width:24, height:24, margin:"auto", borderRadius:"50%",
+                width:24, height:24, margin:"auto", borderRadius:"50%",
 
-                display:"flex", alignItems:"center", justifyContent:"center",
+                display:"flex", alignItems:"center", justifyContent:"center",
 
-                fontSize:11, cursor: day ? "pointer" : "default", padding:0,
+                fontSize:11, cursor: day ? "pointer" : "default", padding:0,
 
-                fontWeight: isToday || isSelected ? 700 : 400,
+                fontWeight: isToday || isSelected ? 700 : 400,
 
-                outline: isToday && !isSelected ? "1px solid #667eea" : "none",
+                outline: isToday && !isSelected ? "1px solid #667eea" : "none",
 
-                outlineOffset: -1,
+                outlineOffset: -1,
 
-              }}
+              }}
 
-            >
+            >
 
-              {day || ""}
+              {day || ""}
 
-              {hasTasks && (
+              {hasTasks && (
 
-                <span style={{
+                <span style={{
 
-                  position:"absolute", bottom:2, left:"50%", transform:"translateX(-50%)",
+                  position:"absolute", bottom:2, left:"50%", transform:"translateX(-50%)",
 
-                  width:4, height:4, borderRadius:"50%",
+                  width:4, height:4, borderRadius:"50%",
 
-                  background: isSelected ? "#fff" : "#f97316"
+                  background: isSelected ? "#fff" : "#f97316"
 
-                }} />
+                }} />
 
-              )}
+              )}
 
-            </button>
+            </button>
 
-          );
+          );
 
-        })}
+        })}
 
-      </div>
+      </div>
 
 
 
-      <div style={{ marginTop:10, borderTop:"0.5px solid var(--border)", paddingTop:9 }}>
+      <div style={{ marginTop:10, borderTop:"0.5px solid var(--border)", paddingTop:9 }}>
 
-        <div style={{ fontSize:11, fontWeight:700, color:"var(--text-main)", marginBottom:7 }}>
+        <div style={{ fontSize:11, fontWeight:700, color:"var(--text-main)", marginBottom:7 }}>
 
-          {selectedDate ? formatDateLabel(selectedDate) : "Pilih tanggal"}
+          {selectedDate ? formatDateLabel(selectedDate) : "Pilih tanggal"}
 
-        </div>
+        </div>
 
 
 
-        {selectedTasks.length === 0 ? (
+        {selectedTasks.length === 0 ? (
 
-          <div style={{ fontSize:11, color:"var(--text-muted)", lineHeight:1.45 }}>
+          <div style={{ fontSize:11, color:"var(--text-muted)", lineHeight:1.45 }}>
 
-            Tidak ada tugas dengan jadwal pada tanggal ini.
+            Tidak ada tugas dengan jadwal pada tanggal ini.
 
-          </div>
+          </div>
 
-        ) : (
+        ) : (
 
-          selectedTasks.map(task => {
+          selectedTasks.map(task => {
 
-            const priority = priorityStyle(task.priority);
+            const priority = priorityStyle(task.priority);
 
-            return (
+            return (
 
-              <div key={task.id} style={{
+              <div key={task.id} style={{
 
-                padding:"7px 8px", marginBottom:6, borderRadius:7,
+                padding:"7px 8px", marginBottom:6, borderRadius:7,
 
-                background: task.color || "var(--bg-timer)",
+                background: task.color || "var(--bg-timer)",
 
-                border:`0.5px solid ${CARD_COLORS.find(c => c.bg === task.color)?.border || "var(--border)"}`,
+                border:`0.5px solid ${CARD_COLORS.find(c => c.bg === task.color)?.border || "var(--border)"}`,
 
-              }}>
+              }}>
 
-                <div style={{ fontSize:11.5, fontWeight:600, color:"var(--text-main)", lineHeight:1.35, wordBreak:"break-word" }}>
+                <div style={{ fontSize:11.5, fontWeight:600, color:"var(--text-main)", lineHeight:1.35, wordBreak:"break-word" }}>
 
-                  {task.title}
+                  {task.title}
 
-                </div>
+                </div>
 
-                <div style={{ display:"flex", alignItems:"center", gap:5, marginTop:5 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:5, marginTop:5 }}>
 
-                  <span style={{ fontSize:9, fontWeight:700, padding:"2px 6px", borderRadius:999, background:priority.bg, color:priority.text }}>
+                  <span style={{ fontSize:9, fontWeight:700, padding:"2px 6px", borderRadius:999, background:priority.bg, color:priority.text }}>
 
-                    {priority.label}
+                    {priority.label}
 
-                  </span>
+                  </span>
 
-                  <span style={{ fontSize:9.5, color:"var(--text-muted)" }}>
+                  <span style={{ fontSize:9.5, color:"var(--text-muted)" }}>
 
-                    {task.status === "done" ? "Selesai" : task.status === "in-progress" ? "Sedang dikerjakan" : task.status === "todo" ? "To Do" : "Backlog"}
+                    {task.status === "done" ? "Selesai" : task.status === "in-progress" ? "Sedang dikerjakan" : task.status === "todo" ? "To Do" : "Backlog"}
 
-                  </span>
+                  </span>
 
-                </div>
+                </div>
 
-              </div>
+              </div>
 
-            );
+            );
 
-          })
+          })
 
-        )}
+        )}
 
-      </div>
+      </div>
 
-    </div>
+    </div>
 
-  );
+  );
 
 }
 
@@ -424,31 +424,31 @@ function MiniCalendar({ quests = [] }) {
 
 function SideSection({ title, children, extra }) {
 
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(true);
 
-  return (
+  return (
 
-    <div style={{ borderBottom: "0.5px solid var(--border)" }}>
+    <div style={{ borderBottom: "0.5px solid var(--border)" }}>
 
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 14px", cursor:"pointer" }} onClick={() => setOpen(o => !o)}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 14px", cursor:"pointer" }} onClick={() => setOpen(o => !o)}>
 
-        <div style={{ fontSize:13, fontWeight:600, color:"var(--text-main)" }}>{title}</div>
+        <div style={{ fontSize:13, fontWeight:600, color:"var(--text-main)" }}>{title}</div>
 
-        <div style={{ display:"flex", alignItems:"center", gap:8, color:"var(--text-muted)", fontSize:13 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8, color:"var(--text-muted)", fontSize:13 }}>
 
-          {extra}
+          {extra}
 
-          <span style={{ transition:"transform .2s", display:"inline-block", transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}>▾</span>
+          <span style={{ transition:"transform .2s", display:"inline-block", transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}>▾</span>
 
-        </div>
+        </div>
 
-      </div>
+      </div>
 
-      {open && children}
+      {open && children}
 
-    </div>
+    </div>
 
-  );
+  );
 
 }
 
@@ -458,87 +458,87 @@ function SideSection({ title, children, extra }) {
 
 function ColorPicker({ currentColor, onChange }) {
 
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  const current = CARD_COLORS.find(c => c.bg === currentColor) || CARD_COLORS[0];
+  const current = CARD_COLORS.find(c => c.bg === currentColor) || CARD_COLORS[0];
 
-  return (
+  return (
 
-    <div style={{ position:"relative" }}>
+    <div style={{ position:"relative" }}>
 
-      <div
+      <div
 
-        onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+        onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
 
-        title="Ubah warna kartu"
+        title="Ubah warna kartu"
 
-        style={{
+        style={{
 
-          width:20, height:20, borderRadius:6,
+          width:20, height:20, borderRadius:6,
 
-          background: current.bg || "var(--bg-badge)",
+          background: current.bg || "var(--bg-badge)",
 
-          border: `2px solid ${current.border || "var(--border)"}`,
+          border: `2px solid ${current.border || "var(--border)"}`,
 
-          cursor:"pointer", flexShrink:0,
+          cursor:"pointer", flexShrink:0,
 
-        }}
+        }}
 
-      />
+      />
 
-      {open && (
+      {open && (
 
-        <>
+        <>
 
-          <div onClick={() => setOpen(false)} style={{ position:"fixed", inset:0, zIndex:99 }} />
+          <div onClick={() => setOpen(false)} style={{ position:"fixed", inset:0, zIndex:99 }} />
 
-          <div style={{
+          <div style={{
 
-            position:"absolute", bottom:28, left:0, zIndex:100,
+            position:"absolute", bottom:28, left:0, zIndex:100,
 
-            background:"var(--bg-surface)", border:"0.5px solid var(--border)",
+            background:"var(--bg-surface)", border:"0.5px solid var(--border)",
 
-            borderRadius:8, padding:7, display:"flex", gap:6, flexWrap:"wrap",
+            borderRadius:8, padding:7, display:"flex", gap:6, flexWrap:"wrap",
 
-            width:130, boxShadow:"0 4px 16px rgba(0,0,0,0.12)",
+            width:130, boxShadow:"0 4px 16px rgba(0,0,0,0.12)",
 
-          }}>
+          }}>
 
-            {CARD_COLORS.map(c => (
+            {CARD_COLORS.map(c => (
 
-              <div key={c.label} title={c.label}
+              <div key={c.label} title={c.label}
 
-                onClick={e => { e.stopPropagation(); onChange(c.bg); setOpen(false); }}
+                onClick={e => { e.stopPropagation(); onChange(c.bg); setOpen(false); }}
 
-                style={{
+                style={{
 
-                  width:20, height:20, borderRadius:4, cursor:"pointer",
+                  width:20, height:20, borderRadius:4, cursor:"pointer",
 
-                  background: c.bg || "#e8e8e4",
+                  background: c.bg || "#e8e8e4",
 
-                  border: `2px solid ${c.bg === currentColor ? "#4f46e5" : (c.border || "var(--border)")}`,
+                  border: `2px solid ${c.bg === currentColor ? "#4f46e5" : (c.border || "var(--border)")}`,
 
-                  transition:"transform .1s",
+                  transition:"transform .1s",
 
-                }}
+                }}
 
-                onMouseOver={e => e.currentTarget.style.transform="scale(1.25)"}
+                onMouseOver={e => e.currentTarget.style.transform="scale(1.25)"}
 
-                onMouseOut={e => e.currentTarget.style.transform="scale(1)"}
+                onMouseOut={e => e.currentTarget.style.transform="scale(1)"}
 
-              />
+              />
 
-            ))}
+            ))}
 
-          </div>
+          </div>
 
-        </>
+        </>
 
-      )}
+      )}
 
-    </div>
+    </div>
 
-  );
+  );
 
 }
 
@@ -548,187 +548,187 @@ function ColorPicker({ currentColor, onChange }) {
 
 function MembersModal({ boardId, onClose }) {
 
-  const [members, setMembers] = useState([]);
+  const [members, setMembers] = useState([]);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const [error, setError]     = useState('');
+  const [error, setError]     = useState('');
 
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState('');
 
-  const [newRole, setNewRole]   = useState('member');
+  const [newRole, setNewRole]   = useState('member');
 
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
 
 
-  const load = () => {
+  const load = () => {
 
-    setLoading(true);
+    setLoading(true);
 
-    api.getBoardMembers(boardId)
+    api.getBoardMembers(boardId)
 
-      .then(setMembers)
+      .then(setMembers)
 
-      .catch(err => setError(err.message))
+      .catch(err => setError(err.message))
 
-      .finally(() => setLoading(false));
+      .finally(() => setLoading(false));
 
-  };
+  };
 
 
 
-  useEffect(() => { load(); }, [boardId]);
+  useEffect(() => { load(); }, [boardId]);
 
 
 
-  const handleAdd = async (e) => {
+  const handleAdd = async (e) => {
 
-    e.preventDefault();
+    e.preventDefault();
 
-    if (!username.trim()) return;
+    if (!username.trim()) return;
 
-    setSubmitting(true);
+    setSubmitting(true);
 
-    setError('');
+    setError('');
 
-    try {
+    try {
 
-      await api.addBoardMember(boardId, username.trim(), newRole);
+      await api.addBoardMember(boardId, username.trim(), newRole);
 
-      setUsername('');
+      setUsername('');
 
-      load();
+      load();
 
-    } catch (err) {
+    } catch (err) {
 
-      setError(err.message || 'Gagal menambahkan member');
+      setError(err.message || 'Gagal menambahkan member');
 
-    } finally {
+    } finally {
 
-      setSubmitting(false);
+      setSubmitting(false);
 
-    }
+    }
 
-  };
+  };
 
 
 
-  const handleRoleChange = async (userId, role) => {
+  const handleRoleChange = async (userId, role) => {
 
-    try { await api.updateBoardMemberRole(boardId, userId, role); load(); }
+    try { await api.updateBoardMemberRole(boardId, userId, role); load(); }
 
-    catch (err) { alert(err.message); }
+    catch (err) { alert(err.message); }
 
-  };
+  };
 
 
 
-  const handleRemove = async (userId) => {
+  const handleRemove = async (userId) => {
 
-    if (!window.confirm('Keluarkan member ini dari board?')) return;
+    if (!window.confirm('Keluarkan member ini dari board?')) return;
 
-    try { await api.removeBoardMember(boardId, userId); load(); }
+    try { await api.removeBoardMember(boardId, userId); load(); }
 
-    catch (err) { alert(err.message); }
+    catch (err) { alert(err.message); }
 
-  };
+  };
 
 
 
-  return (
+  return (
 
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000 }} onClick={onClose}>
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000 }} onClick={onClose}>
 
-      <div onClick={e => e.stopPropagation()} style={{ background:"#fff", borderRadius:16, padding:24, width:420, maxWidth:"90%", fontFamily:"system-ui, sans-serif" }}>
+      <div onClick={e => e.stopPropagation()} style={{ background:"#fff", borderRadius:16, padding:24, width:420, maxWidth:"90%", fontFamily:"system-ui, sans-serif" }}>
 
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
 
-          <h3 style={{ margin:0, fontSize:16, fontWeight:700, color:"#1e293b" }}>Board Members</h3>
+          <h3 style={{ margin:0, fontSize:16, fontWeight:700, color:"#1e293b" }}>Board Members</h3>
 
-          <span onClick={onClose} style={{ cursor:"pointer", color:"#94a3b8" }}>✕</span>
+          <span onClick={onClose} style={{ cursor:"pointer", color:"#94a3b8" }}>✕</span>
 
-        </div>
+        </div>
 
 
 
-        <form onSubmit={handleAdd} style={{ display:"flex", gap:8, marginBottom:16 }}>
+        <form onSubmit={handleAdd} style={{ display:"flex", gap:8, marginBottom:16 }}>
 
-          <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Username"
+          <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Username"
 
-            style={{ flex:1, padding:"8px 10px", borderRadius:8, border:"1px solid #cbd5e1", fontSize:13 }} />
+            style={{ flex:1, padding:"8px 10px", borderRadius:8, border:"1px solid #cbd5e1", fontSize:13 }} />
 
-          <select value={newRole} onChange={e => setNewRole(e.target.value)}
+          <select value={newRole} onChange={e => setNewRole(e.target.value)}
 
-            style={{ padding:"8px 10px", borderRadius:8, border:"1px solid #cbd5e1", fontSize:13 }}>
+            style={{ padding:"8px 10px", borderRadius:8, border:"1px solid #cbd5e1", fontSize:13 }}>
 
-            <option value="member">Member</option>
+            <option value="member">Member</option>
 
-            <option value="admin">Admin</option>
+            <option value="admin">Admin</option>
 
-          </select>
+          </select>
 
-          <button type="submit" disabled={submitting} style={{
+          <button type="submit" disabled={submitting} style={{
 
-            padding:"8px 14px", borderRadius:8, border:"none", background:"#7a8560",
+            padding:"8px 14px", borderRadius:8, border:"none", background:"#7a8560",
 
-            color:"#fff", fontWeight:600, fontSize:13, cursor:"pointer"
+            color:"#fff", fontWeight:600, fontSize:13, cursor:"pointer"
 
-          }}>{submitting ? '...' : 'Add'}</button>
+          }}>{submitting ? '...' : 'Add'}</button>
 
-        </form>
+        </form>
 
 
 
-        {error && <div style={{ color:"#b91c1c", fontSize:12, marginBottom:10 }}>⚠️ {error}</div>}
+        {error && <div style={{ color:"#b91c1c", fontSize:12, marginBottom:10 }}>⚠️ {error}</div>}
 
 
 
-        {loading ? (
+        {loading ? (
 
-          <div style={{ fontSize:13, color:"#64748b" }}>Memuat...</div>
+          <div style={{ fontSize:13, color:"#64748b" }}>Memuat...</div>
 
-        ) : (
+        ) : (
 
-          <div style={{ maxHeight:280, overflowY:"auto" }}>
+          <div style={{ maxHeight:280, overflowY:"auto" }}>
 
-            {members.map(m => (
+            {members.map(m => (
 
-              <div key={m.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 0", borderBottom:"1px solid #f1f5f9" }}>
+              <div key={m.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 0", borderBottom:"1px solid #f1f5f9" }}>
 
-                <div style={{ flex:1 }}>
+                <div style={{ flex:1 }}>
 
-                  <div style={{ fontSize:13, fontWeight:600, color:"#1e293b" }}>{m.fullname || m.username}</div>
+                  <div style={{ fontSize:13, fontWeight:600, color:"#1e293b" }}>{m.fullname || m.username}</div>
 
-                  <div style={{ fontSize:11, color:"#94a3b8" }}>@{m.username}</div>
+                  <div style={{ fontSize:11, color:"#94a3b8" }}>@{m.username}</div>
 
-                </div>
+                </div>
 
-                <select value={m.role} onChange={e => handleRoleChange(m.id, e.target.value)}
+                <select value={m.role} onChange={e => handleRoleChange(m.id, e.target.value)}
 
-                  style={{ fontSize:12, padding:"4px 6px", borderRadius:6, border:"1px solid #cbd5e1" }}>
+                  style={{ fontSize:12, padding:"4px 6px", borderRadius:6, border:"1px solid #cbd5e1" }}>
 
-                  <option value="member">Member</option>
+                  <option value="member">Member</option>
 
-                  <option value="admin">Admin</option>
+                  <option value="admin">Admin</option>
 
-                </select>
+                </select>
 
-                <span onClick={() => handleRemove(m.id)} style={{ cursor:"pointer", color:"#94a3b8", fontSize:12 }}>🗑️</span>
+                <span onClick={() => handleRemove(m.id)} style={{ cursor:"pointer", color:"#94a3b8", fontSize:12 }}>🗑️</span>
 
-              </div>
+              </div>
 
-            ))}
+            ))}
 
-          </div>
+          </div>
 
-        )}
+        )}
 
-      </div>
+      </div>
 
-    </div>
+    </div>
 
-  );
+  );
 
 }
 
@@ -742,29 +742,56 @@ function MembersModal({ boardId, onClose }) {
 
 export default function App({ boardId, boardName, role = 'member', onBackToDashboard }) {
 
-  const isAdmin = role === 'admin';
+  const isAdmin = role === 'admin';
+  const [showAppearance, setShowAppearance] = useState(false);
+  const [boardAppearance, setBoardAppearance] = useState({ background: 'whiteboard', background_image: null });
+  const [appearanceFile, setAppearanceFile] = useState(null);
+  const [appearanceSaving, setAppearanceSaving] = useState(false);
+  useEffect(() => {
+    if (!boardId) return;
+    api.getBoard(boardId).then(data => setBoardAppearance({ background: data.background || 'whiteboard', background_image: data.background_image || null })).catch(err => console.error('Gagal memuat tampilan board:', err));
+  }, [boardId]);
+  const saveBoardAppearance = async () => {
+    setAppearanceSaving(true);
+    try {
+      const form = new FormData(); form.append('background', boardAppearance.background);
+      if (appearanceFile) form.append('background_image', appearanceFile);
+      await api.updateBoardAppearance(boardId, form);
+      const fresh = await api.getBoard(boardId);
+      setBoardAppearance({ background: fresh.background || 'whiteboard', background_image: fresh.background_image || null });
+      setAppearanceFile(null); setShowAppearance(false);
+    } catch (err) { alert(err.message || 'Gagal menyimpan background board'); }
+    finally { setAppearanceSaving(false); }
+  };
+  const boardBackgroundStyle = boardAppearance.background_image
+    ? `url(${(import.meta.env.VITE_API_URL || 'http://localhost:8000/api').replace(/\/api\/?$/, '')}/storage/${boardAppearance.background_image})`
+    : boardAppearance.background === 'green' ? 'linear-gradient(135deg, #174b38, #23634a)'
+    : boardAppearance.background === 'blue' ? 'linear-gradient(135deg, #dbeafe, #eff6ff)'
+    : boardAppearance.background === 'cream' ? 'linear-gradient(135deg, #f5ead5, #fffaf0)'
+    : boardAppearance.background === 'dark' ? 'linear-gradient(135deg, #202124, #34363a)'
+    : `url(${whiteboardBg})`;
 
-  const [quests, setQuests]           = useState([]);
+  const [quests, setQuests]           = useState([]);
 
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  const [dragOver, setDragOver]       = useState(null);
+  const [dragOver, setDragOver]       = useState(null);
 
-  const [loading, setLoading]         = useState(true);
+  const [loading, setLoading]         = useState(true);
 
-  const [showMembers, setShowMembers] = useState(false);
+  const [showMembers, setShowMembers] = useState(false);
 
-  const [search, setSearch]           = useState("");
+  const [search, setSearch]           = useState("");
 
-  const [priorityFilter, setPriorityFilter] = useState("semua");
+  const [priorityFilter, setPriorityFilter] = useState("semua");
 
-  const [addModal, setAddModal]       = useState(null); // { status } | null
+  const [addModal, setAddModal]       = useState(null); // { status } | null
 
-  const [newTitle, setNewTitle]       = useState("");
+  const [newTitle, setNewTitle]       = useState("");
 
-  const [newPriority, setNewPriority] = useState("sedang");
+  const [newPriority, setNewPriority] = useState("sedang");
 
-  const [newDueDate, setNewDueDate]   = useState("");
+  const [newDueDate, setNewDueDate]   = useState("");
   const [boardMembers, setBoardMembers] = useState([]);
   const [membersLoading, setMembersLoading] = useState(false);
   const [selectedAssignees, setSelectedAssignees] = useState([]);
@@ -792,173 +819,173 @@ export default function App({ boardId, boardName, role = 'member', onBackToDashb
 
   // ── Fetch tasks ──
 
-  useEffect(() => {
+  useEffect(() => {
 
-    if (!boardId) return;
+    if (!boardId) return;
 
-    setLoading(true);
+    setLoading(true);
 
-    api.getTasks(boardId)
+    api.getTasks(boardId)
 
-      .then(data => {
+      .then(data => {
 
-        const normalised = data.map(t => ({
+        const normalised = data.map(t => ({
 
-          ...t,
+          ...t,
 
-          note:      t.description ?? t.note ?? "",
+          note:      t.description ?? t.note ?? "",
 
-          time:      Number(t.time) || 0,
+          time:      Number(t.time) || 0,
 
-          isRunning: Boolean(t.is_running || t.isRunning),
+          isRunning: Boolean(t.is_running || t.isRunning),
 
-          color:     t.color ?? null,
+          color:     t.color ?? null,
 
-          priority:  t.priority ?? "sedang",
+          priority:  t.priority ?? "sedang",
 
-          due_date:  toDateKey(t.due_date),
+          due_date:  toDateKey(t.due_date),
 
-        }));
+        }));
 
-        setQuests(normalised);
+        setQuests(normalised);
 
-      })
+      })
 
-      .catch(err => console.error("Gagal ambil tasks:", err))
+      .catch(err => console.error("Gagal ambil tasks:", err))
 
-      .finally(() => setLoading(false));
+      .finally(() => setLoading(false));
 
-  }, [boardId]);
+  }, [boardId]);
 
 
 
-  // ── Timer tick ──
+  // ── Timer tick ──
 
-  useEffect(() => {
+  useEffect(() => {
 
-    const iv = setInterval(() => {
+    const iv = setInterval(() => {
 
-      setQuests(prev => prev.map(q => q.isRunning ? { ...q, time: q.time + 1 } : q));
+      setQuests(prev => prev.map(q => q.isRunning ? { ...q, time: q.time + 1 } : q));
 
-    }, 1000);
+    }, 1000);
 
-    return () => clearInterval(iv);
+    return () => clearInterval(iv);
 
-  }, []);
+  }, []);
 
 
 
-  // ── Sync task ke backend ──
+  // ── Sync task ke backend ──
 
-  const syncTask = useCallback(async (quest) => {
+  const syncTask = useCallback(async (quest) => {
 
-    try {
+    try {
 
-      await api.updateTask(
+      await api.updateTask(
 
-        quest.id, quest.title, quest.note ?? "",
+        quest.id, quest.title, quest.note ?? "",
 
-        quest.status, quest.color, quest.time,
+        quest.status, quest.color, quest.time,
 
-        quest.isRunning, quest.due_date ?? null, quest.priority ?? "sedang"
+        quest.isRunning, quest.due_date ?? null, quest.priority ?? "sedang"
 
-      );
+      );
 
-    } catch (err) { console.error("Gagal sync task:", err); }
+    } catch (err) { console.error("Gagal sync task:", err); }
 
-  }, []);
+  }, []);
 
 
 
-  const toggleTimer = (id) => {
+  const toggleTimer = (id) => {
 
-    setQuests(prev => prev.map(q => {
+    setQuests(prev => prev.map(q => {
 
-      if (q.id !== id) return q;
+      if (q.id !== id) return q;
 
-      const updated = { ...q, isRunning: !q.isRunning };
+      const updated = { ...q, isRunning: !q.isRunning };
 
-      syncTask(updated);
+      syncTask(updated);
 
-      return updated;
+      return updated;
 
-    }));
+    }));
 
-  };
+  };
 
 
 
-  const setQuestColor = (id, color) => {
+  const setQuestColor = (id, color) => {
 
-    setQuests(prev => prev.map(q => {
+    setQuests(prev => prev.map(q => {
 
-      if (q.id !== id) return q;
+      if (q.id !== id) return q;
 
-      const updated = { ...q, color };
+      const updated = { ...q, color };
 
-      syncTask(updated);
+      syncTask(updated);
 
-      return updated;
+      return updated;
 
-    }));
+    }));
 
-  };
+  };
 
 
 
-  const setQuestNote = (id, text) => {
+  const setQuestNote = (id, text) => {
 
-    const words = text.split(/\s+/).filter(Boolean);
+    const words = text.split(/\s+/).filter(Boolean);
 
-    let finalText = text;
+    let finalText = text;
 
-    if (words.length > 15) {
+    if (words.length > 15) {
 
-      let count = 0, cutIndex = 0;
+      let count = 0, cutIndex = 0;
 
-      for (let i = 0; i < text.length; i++) {
+      for (let i = 0; i < text.length; i++) {
 
-        const prevChar = i === 0 ? " " : text[i-1];
+        const prevChar = i === 0 ? " " : text[i-1];
 
-        if ((prevChar === " " || prevChar === "\n") && text[i] !== " " && text[i] !== "\n") count++;
+        if ((prevChar === " " || prevChar === "\n") && text[i] !== " " && text[i] !== "\n") count++;
 
-        if (count > 15) { cutIndex = i; break; }
+        if (count > 15) { cutIndex = i; break; }
 
-      }
+      }
 
-      finalText = text.substring(0, cutIndex).trimEnd();
+      finalText = text.substring(0, cutIndex).trimEnd();
 
-    }
+    }
 
-    setQuests(prev => prev.map(q => q.id === id ? { ...q, note: finalText } : q));
+    setQuests(prev => prev.map(q => q.id === id ? { ...q, note: finalText } : q));
 
-  };
+  };
 
 
 
-  const syncNoteOnBlur = (quest) => syncTask({ ...quest });
+  const syncNoteOnBlur = (quest) => syncTask({ ...quest });
 
 
 
 const openAddModal = (colId = "todo") => {
 
-  if (!boardId) {
+  if (!boardId) {
 
-    alert("Board belum dimuat. Coba refresh.");
+    alert("Board belum dimuat. Coba refresh.");
 
-    return;
+    return;
 
-  }
+  }
 
 
 
-  setNewTitle("");
+  setNewTitle("");
 
-  setNewPriority("sedang");
+  setNewPriority("sedang");
 
-  setNewDueDate("");
+  setNewDueDate("");
 
-  setSelectedAssignees([]);
+  setSelectedAssignees([]);
   setPriorityMenuOpen(false);
   setAddModal({ status: colId });
 
@@ -966,7 +993,7 @@ const openAddModal = (colId = "todo") => {
 
 
 
-  const submitNewTask = async (e) => {
+  const submitNewTask = async (e) => {
     e.preventDefault();
     if (!newTitle.trim() || !addModal || savingTask) return;
 
@@ -1020,357 +1047,373 @@ const openAddModal = (colId = "todo") => {
 
   const deleteQuest = async (id) => {
 
-    if (!window.confirm("Hapus tugas ini?")) return;
+    if (!window.confirm("Hapus tugas ini?")) return;
 
-    try {
+    try {
 
-      await api.deleteTask(id);
+      await api.deleteTask(id);
 
-      setQuests(prev => prev.filter(q => q.id !== id));
+      setQuests(prev => prev.filter(q => q.id !== id));
 
-    } catch (err) {
+    } catch (err) {
 
-      console.error("Gagal hapus task:", err);
+      console.error("Gagal hapus task:", err);
 
-      alert("Gagal menghapus tugas.");
+      alert("Gagal menghapus tugas.");
 
-    }
+    }
 
-  };
+  };
 
 
 
-  // ── Drag & Drop ──
+  // ── Drag & Drop ──
 
-  const handleDragStart = (e, id) => {
+  const handleDragStart = (e, id) => {
 
-    e.dataTransfer.setData("text/plain", String(id));
+    e.dataTransfer.setData("text/plain", String(id));
 
-    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.effectAllowed = "move";
 
-  };
+  };
 
 
 
-  const handleDragOver = (e, colId) => {
+  const handleDragOver = (e, colId) => {
 
-    e.preventDefault(); e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
 
-    e.dataTransfer.dropEffect = "move";
+    e.dataTransfer.dropEffect = "move";
 
-    setDragOver(colId);
+    setDragOver(colId);
 
-  };
+  };
 
 
 
-  const handleDragLeave = (e) => {
+  const handleDragLeave = (e) => {
 
-    const rect = e.currentTarget.getBoundingClientRect();
+    const rect = e.currentTarget.getBoundingClientRect();
 
-    if (e.clientX < rect.left || e.clientX >= rect.right ||
+    if (e.clientX < rect.left || e.clientX >= rect.right ||
 
-        e.clientY < rect.top  || e.clientY >= rect.bottom) setDragOver(null);
+        e.clientY < rect.top  || e.clientY >= rect.bottom) setDragOver(null);
 
-  };
+  };
 
 
 
-  const handleDrop = (e, targetStatus) => {
+  const handleDrop = (e, targetStatus) => {
 
-    e.preventDefault(); e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
 
-    setDragOver(null);
+    setDragOver(null);
 
-    const id = e.dataTransfer.getData("text/plain");
+    const id = e.dataTransfer.getData("text/plain");
 
-    if (!id) return;
+    if (!id) return;
 
-    setQuests(prev => prev.map(q => {
+    setQuests(prev => prev.map(q => {
 
-      if (String(q.id) !== String(id)) return q;
+      if (String(q.id) !== String(id)) return q;
 
-      const updated = { ...q, status: targetStatus, isRunning: targetStatus === "in-progress" };
+      const updated = { ...q, status: targetStatus, isRunning: targetStatus === "in-progress" };
 
-      syncTask(updated);
+      syncTask(updated);
 
-      return updated;
+      return updated;
 
-    }));
+    }));
 
-  };
+  };
 
 
 
-  const formatTime = (s) => {
+  const formatTime = (s) => {
 
-    s = Number(s) || 0;
+    s = Number(s) || 0;
 
-    const h   = Math.floor(s / 3600).toString().padStart(2,"0");
+    const h   = Math.floor(s / 3600).toString().padStart(2,"0");
 
-    const m   = Math.floor((s % 3600) / 60).toString().padStart(2,"0");
+    const m   = Math.floor((s % 3600) / 60).toString().padStart(2,"0");
 
-    const sec = (s % 60).toString().padStart(2,"0");
+    const sec = (s % 60).toString().padStart(2,"0");
 
-    return `${h}:${m}:${sec}`;
+    return `${h}:${m}:${sec}`;
 
-  };
+  };
 
 
 
-  const filteredQuests = (colId) => {
+  const filteredQuests = (colId) => {
 
-    let base = colId === "todo"
+    let base = colId === "todo"
 
-      ? quests.filter(q => q.status === "todo" || q.status === "backlog")
+      ? quests.filter(q => q.status === "todo" || q.status === "backlog")
 
-      : quests.filter(q => q.status === colId);
+      : quests.filter(q => q.status === colId);
 
-    if (search.trim()) {
+    if (search.trim()) {
 
-      const q = search.trim().toLowerCase();
+      const q = search.trim().toLowerCase();
 
-      base = base.filter(t => t.title.toLowerCase().includes(q));
+      base = base.filter(t => t.title.toLowerCase().includes(q));
 
-    }
+    }
 
-    if (priorityFilter !== "semua") {
+    if (priorityFilter !== "semua") {
 
-      base = base.filter(t => (t.priority || "sedang") === priorityFilter);
+      base = base.filter(t => (t.priority || "sedang") === priorityFilter);
 
-    }
+    }
 
-    return base;
+    return base;
 
-  };
+  };
 
 
 
-  return (
+  return (
 
-    <div style={{
+    <div style={{
 
-      display:"flex", flexDirection:"column", height:"100vh",
+      display:"flex", flexDirection:"column", height:"100vh",
 
-      fontFamily:"system-ui, sans-serif", fontSize:13,
+      fontFamily:"system-ui, sans-serif", fontSize:13,
 
-      backgroundImage:`url(${whiteboardBg})`,
+      background: boardBackgroundStyle,
 
-      backgroundSize:"cover", backgroundPosition:"center",
+      backgroundSize:"cover", backgroundPosition:"center",
 
-      color:"var(--text-main)", position:"relative"
+      color:"var(--text-main)", position:"relative"
 
-    }}>
+    }}>
 
 
 
-      {/* ── Topbar: nama board kiri, tombol Dashboard kanan ── */}
+      {/* ── Topbar: nama board kiri, tombol Dashboard kanan ── */}
 
-      <div style={{
+      <div style={{
 
-        display:"flex", alignItems:"center", justifyContent:"space-between",
+        display:"flex", alignItems:"center", justifyContent:"space-between",
 
-        padding:"10px 16px",
+        padding:"10px 16px",
 
-        background:"rgba(255,255,255,0.92)",
+        background:"rgba(255,255,255,0.92)",
 
-        borderBottom:"0.5px solid var(--border)",
+        borderBottom:"0.5px solid var(--border)",
 
-        flexShrink:0, backdropFilter:"blur(10px)",
+        flexShrink:0, backdropFilter:"blur(10px)",
 
-        boxShadow:"0 1px 4px rgba(0,0,0,0.06)"
+        boxShadow:"0 1px 4px rgba(0,0,0,0.06)"
 
-      }}>
+      }}>
 
-        {/* Nama board */}
+        {/* Nama board */}
 
-        <span style={{ display:"flex", alignItems:"center", gap:8 }}>
+        <span style={{ display:"flex", alignItems:"center", gap:8 }}>
 
-          <span style={{
+          <span style={{
 
-            fontSize:14, fontWeight:600, color:"var(--text-main)",
+            fontSize:14, fontWeight:600, color:"var(--text-main)",
 
-            letterSpacing:"-0.2px"
+            letterSpacing:"-0.2px"
 
-          }}>
+          }}>
 
-            {boardName || "Board"}
+            {boardName || "Board"}
 
-          </span>
+          </span>
 
-          <span style={{
+          <span style={{
 
-            fontSize:10, fontWeight:700, padding:"3px 8px", borderRadius:999,
+            fontSize:10, fontWeight:700, padding:"3px 8px", borderRadius:999,
 
-            color: isAdmin ? "#166534" : "#1e40af",
+            color: isAdmin ? "#166534" : "#1e40af",
 
-            background: isAdmin ? "rgba(220,252,231,0.9)" : "rgba(219,234,254,0.9)",
+            background: isAdmin ? "rgba(220,252,231,0.9)" : "rgba(219,234,254,0.9)",
 
-            textTransform:"uppercase", letterSpacing:"0.5px"
+            textTransform:"uppercase", letterSpacing:"0.5px"
 
-          }}>{isAdmin ? "Admin" : "Member"}</span>
+          }}>{isAdmin ? "Admin" : "Member"}</span>
 
-        </span>
+        </span>
 
 
 
-        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
 
-          {isAdmin && (
+      {isAdmin && (
+        <>
+          <button
+            onClick={() => setShowAppearance(true)}
+            style={{
+              background: "none",
+              border: "1px solid var(--border)",
+              cursor: "pointer",
+              color: "var(--text-muted)",
+              fontSize: 12,
+              fontWeight: 500,
+              padding: "5px 12px",
+              borderRadius: 6,
+            }}
+          >
+            🎨 Background
+          </button>
 
-            <button onClick={() => setShowMembers(true)} style={{
+          <button
+            onClick={() => setShowMembers(true)}
+            style={{
+              background: "none",
+              border: "1px solid var(--border)",
+              cursor: "pointer",
+              color: "var(--text-muted)",
+              fontSize: 12,
+              fontWeight: 500,
+              padding: "5px 14px",
+              borderRadius: 6,
+            }}
+          >
+            👥 Members
+          </button>
+        </>
+      )}
 
-              background:"none", border:"1px solid var(--border)",
+          <button
 
-              cursor:"pointer", color:"var(--text-muted)",
+            type="button"
 
-              fontSize:12, fontWeight:500,
+            onClick={() => openAddModal("todo")}
 
-              padding:"5px 14px", borderRadius:6,
+            style={{
 
-            }}>
+              background: "#f97316",
 
-              👥 Members
+              border: "none",
 
-            </button>
+              color: "#fff",
 
-          )}
+              cursor: "pointer",
 
-          <button
+              fontSize: 12,
 
-            type="button"
+              fontWeight: 600,
 
-            onClick={() => openAddModal("todo")}
+              padding: "7px 16px",
 
-            style={{
+              borderRadius: 8,
 
-              background: "#f97316",
+            }}
 
-              border: "none",
+          >
 
-              color: "#fff",
+            + Tambah Tugas Baru
 
-              cursor: "pointer",
+          </button>
 
-              fontSize: 12,
+          {/* Tombol Dashboard */}
 
-              fontWeight: 600,
+          {onBackToDashboard && (
 
-              padding: "7px 16px",
+            <button onClick={onBackToDashboard} style={{
 
-              borderRadius: 8,
+              background:"none", border:"1px solid var(--border)",
 
-            }}
+              cursor:"pointer", color:"var(--text-muted)",
 
-          >
+              fontSize:12, fontWeight:500,
 
-            + Tambah Tugas Baru
+              padding:"5px 14px", borderRadius:6,
 
-          </button>
+              display:"flex", alignItems:"center", gap:4,
 
-          {/* Tombol Dashboard */}
+              transition:"all .15s"
 
-          {onBackToDashboard && (
+            }}
 
-            <button onClick={onBackToDashboard} style={{
+              onMouseOver={e => { e.currentTarget.style.background="var(--bg-column)"; e.currentTarget.style.color="var(--text-main)"; }}
 
-              background:"none", border:"1px solid var(--border)",
+              onMouseOut={e => { e.currentTarget.style.background="none"; e.currentTarget.style.color="var(--text-muted)"; }}
 
-              cursor:"pointer", color:"var(--text-muted)",
+            >
 
-              fontSize:12, fontWeight:500,
+              Dashboard
 
-              padding:"5px 14px", borderRadius:6,
+            </button>
 
-              display:"flex", alignItems:"center", gap:4,
+          )}
 
-              transition:"all .15s"
+        </div>
 
-            }}
+      </div>
 
-              onMouseOver={e => { e.currentTarget.style.background="var(--bg-column)"; e.currentTarget.style.color="var(--text-main)"; }}
 
-              onMouseOut={e => { e.currentTarget.style.background="none"; e.currentTarget.style.color="var(--text-muted)"; }}
 
-            >
+      {/* ── Search + filter bar ── */}
 
-              Dashboard
+      <div style={{
 
-            </button>
+        display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12,
 
-          )}
+        padding:"10px 16px", background:"rgba(255,255,255,0.8)",
 
-        </div>
+        borderBottom:"0.5px solid var(--border)", flexShrink:0, backdropFilter:"blur(10px)"
 
-      </div>
+      }}>
 
+        <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
 
+          <input
 
-      {/* ── Search + filter bar ── */}
+            value={search} onChange={e => setSearch(e.target.value)}
 
-      <div style={{
+            placeholder="🔍 Cari tugas..."
 
-        display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12,
+            style={{ padding:"7px 12px", borderRadius:8, border:"1px solid var(--border)", fontSize:12, outline:"none", width:180 }}
 
-        padding:"10px 16px", background:"rgba(255,255,255,0.8)",
+          />
 
-        borderBottom:"0.5px solid var(--border)", flexShrink:0, backdropFilter:"blur(10px)"
+          <select value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)}
 
-      }}>
+            style={{ padding:"7px 10px", borderRadius:8, border:"1px solid var(--border)", fontSize:12, outline:"none", background:"#fff" }}>
 
-        <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+            <option value="semua">Semua Prioritas</option>
 
-          <input
+            {PRIORITIES.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
 
-            value={search} onChange={e => setSearch(e.target.value)}
+          </select>
 
-            placeholder="🔍 Cari tugas..."
+        </div>
 
-            style={{ padding:"7px 12px", borderRadius:8, border:"1px solid var(--border)", fontSize:12, outline:"none", width:180 }}
 
-          />
 
-          <select value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)}
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
 
-            style={{ padding:"7px 10px", borderRadius:8, border:"1px solid var(--border)", fontSize:12, outline:"none", background:"#fff" }}>
+          <span style={{ fontSize:11.5, color:"var(--text-muted)" }}>
 
-            <option value="semua">Semua Prioritas</option>
+            Total Selesai: <strong style={{ color:"var(--text-main)" }}>{quests.filter(q => q.status === "done").length}/{quests.length}</strong> Tugas Selesai
 
-            {PRIORITIES.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+          </span>
 
-          </select>
+          <div style={{ width:80, height:5, borderRadius:4, background:"#f1f5f9", overflow:"hidden" }}>
 
-        </div>
+            <div style={{
 
+              width: `${quests.length > 0 ? Math.round(quests.filter(q => q.status === "done").length / quests.length * 100) : 0}%`,
 
+              height:"100%", background:"#16a34a"
 
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            }} />
 
-          <span style={{ fontSize:11.5, color:"var(--text-muted)" }}>
+          </div>
 
-            Total Selesai: <strong style={{ color:"var(--text-main)" }}>{quests.filter(q => q.status === "done").length}/{quests.length}</strong> Tugas Selesai
+        </div>
 
-          </span>
+      </div>
 
-          <div style={{ width:80, height:5, borderRadius:4, background:"#f1f5f9", overflow:"hidden" }}>
 
-            <div style={{
 
-              width: `${quests.length > 0 ? Math.round(quests.filter(q => q.status === "done").length / quests.length * 100) : 0}%`,
-
-              height:"100%", background:"#16a34a"
-
-            }} />
-
-          </div>
-
-        </div>
-
-      </div>
-
-
-
-      {addModal && (
+      {addModal && (
         <div
           style={{ position:"fixed", inset:0, background:"rgba(15,23,42,0.42)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1001, padding:16 }}
           onClick={() => { if (!savingTask) setAddModal(null); }}
@@ -1427,494 +1470,511 @@ const openAddModal = (colId = "todo") => {
 
       {showMembers && (
 
-        <MembersModal boardId={boardId} onClose={() => setShowMembers(false)} />
+        <MembersModal boardId={boardId} onClose={() => setShowMembers(false)} />
 
-      )}
+      )}
 
 
 
-      <div style={{ display:"flex", flex:1, overflow:"hidden", position:"relative" }}>
+      {showAppearance && isAdmin && (
+        <div style={{ position:"fixed", inset:0, zIndex:1100, background:"rgba(15,23,42,.45)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }} onClick={() => !appearanceSaving && setShowAppearance(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ width:440, maxWidth:"100%", background:"#fff", borderRadius:16, padding:24, boxShadow:"0 20px 60px rgba(0,0,0,.18)" }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}><h3 style={{ margin:0, color:"#1e293b", fontSize:18 }}>Background Board</h3><button onClick={() => setShowAppearance(false)} style={{ border:0, background:"transparent", fontSize:22, cursor:"pointer", color:"#64748b" }}>×</button></div>
+            <p style={{ margin:"0 0 16px", color:"#64748b", fontSize:13 }}>Pilih tampilan untuk board ini. Semua anggota akan melihat background yang sama.</p>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(2,minmax(0,1fr))", gap:10 }}>
+              {[
+                {id:"whiteboard",label:"Papan tulis putih",preview:"#ffffff",border:"#dbe1e8"}, {id:"green",label:"Papan tulis hijau",preview:"linear-gradient(135deg,#174b38,#23634a)",border:"#174b38"}, {id:"blue",label:"Biru lembut",preview:"linear-gradient(135deg,#dbeafe,#eff6ff)",border:"#bfdbfe"}, {id:"cream",label:"Krem",preview:"linear-gradient(135deg,#f5ead5,#fffaf0)",border:"#e7d8bb"}, {id:"dark",label:"Gelap",preview:"linear-gradient(135deg,#202124,#34363a)",border:"#34363a"}
+              ].map(option => <button key={option.id} onClick={() => setBoardAppearance(v => ({...v,background:option.id}))} style={{ textAlign:"left", padding:0, border:boardAppearance.background===option.id?"2px solid #f97316":"1px solid #e2e8f0", borderRadius:10, overflow:"hidden", background:"#fff", cursor:"pointer" }}><div style={{ height:58, background:option.preview, borderBottom:`1px solid ${option.border}` }} /><div style={{ padding:"9px 10px", fontSize:12, color:"#334155", fontWeight:600 }}>{option.label}{boardAppearance.background===option.id?" ✓":""}</div></button>)}
+            </div>
+            <label style={{ display:"block", marginTop:18, color:"#334155", fontWeight:600, fontSize:12 }}>Atau unggah gambar sendiri (JPG, PNG, WEBP; maks. 5 MB)</label><input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => setAppearanceFile(e.target.files?.[0] || null)} style={{ width:"100%", marginTop:8, fontSize:12 }} />
+            {appearanceFile && <div style={{ marginTop:6, fontSize:12, color:"#64748b" }}>Dipilih: {appearanceFile.name}</div>}
+            <div style={{ display:"flex", justifyContent:"flex-end", gap:8, marginTop:22 }}><button onClick={() => setShowAppearance(false)} disabled={appearanceSaving} style={{ padding:"9px 14px", border:"1px solid #dbe1e8", borderRadius:8, background:"#fff", cursor:"pointer" }}>Batal</button><button onClick={saveBoardAppearance} disabled={appearanceSaving} style={{ padding:"9px 16px", border:0, borderRadius:8, background:"#f97316", color:"#fff", fontWeight:600, cursor:"pointer" }}>{appearanceSaving?"Menyimpan...":"Simpan background"}</button></div>
+          </div>
+        </div>
+      )}
 
+      <div style={{ display:"flex", flex:1, overflow:"hidden", position:"relative" }}>
 
 
-        {/* ── Board ── */}
 
-        <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden", padding:"20px" }}>
+        {/* ── Board ── */}
 
-          {loading ? (
+        <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden", padding:"20px" }}>
 
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"center", flex:1, color:"var(--text-muted)", fontSize:14 }}>
+          {loading ? (
 
-              Memuat tugas...
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"center", flex:1, color:"var(--text-muted)", fontSize:14 }}>
 
-            </div>
+              Memuat tugas...
 
-          ) : (
+            </div>
 
-            <div style={{ display:"flex", gap:20, flex:1, overflowX:"auto", overflowY:"hidden" }}>
+          ) : (
 
-              {FIXED_COLUMNS.map(col => {
+            <div style={{ display:"flex", gap:20, flex:1, overflowX:"auto", overflowY:"hidden" }}>
 
-                const cards = filteredQuests(col.id);
+              {FIXED_COLUMNS.map(col => {
 
-                const isOver = dragOver === col.id;
+                const cards = filteredQuests(col.id);
 
-                return (
+                const isOver = dragOver === col.id;
 
-                  <div key={col.id}
+                return (
 
-                    onDragOver={e => handleDragOver(e, col.id)}
+                  <div key={col.id}
 
-                    onDragLeave={handleDragLeave}
+                    onDragOver={e => handleDragOver(e, col.id)}
 
-                    onDrop={e => handleDrop(e, col.id)}
+                    onDragLeave={handleDragLeave}
 
-                    style={{
+                    onDrop={e => handleDrop(e, col.id)}
 
-                      flex:"1 0 250px", display:"flex", flexDirection:"column",
+                    style={{
 
-                      borderRadius:18, border:"1px solid var(--border)",
+                      flex:"1 0 250px", display:"flex", flexDirection:"column",
 
-                      background: isOver ? "var(--bg-column-hover)" : "var(--bg-column)",
+                      borderRadius:18, border:"1px solid var(--border)",
 
-                      backdropFilter:"blur(8px)",
+                      background: isOver ? "var(--bg-column-hover)" : "var(--bg-column)",
 
-                      transition:"background .2s", minWidth:240,
+                      backdropFilter:"blur(8px)",
 
-                      overflow:"hidden", boxShadow:"0 4px 12px rgba(0,0,0,0.03)"
+                      transition:"background .2s", minWidth:240,
 
-                    }}>
+                      overflow:"hidden", boxShadow:"0 4px 12px rgba(0,0,0,0.03)"
 
+                    }}>
 
 
-                    {/* Column header */}
 
-                    <div style={{ padding:"14px 16px", borderBottom:"0.5px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"space-between", background:"var(--bg-header)", flexShrink:0 }}>
+                    {/* Column header */}
 
-                      <span style={{ fontWeight:700, fontSize:14, userSelect:"none", color:"var(--text-main)", display:"flex", alignItems:"center", gap:8 }}>
+                    <div style={{ padding:"14px 16px", borderBottom:"0.5px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"space-between", background:"var(--bg-header)", flexShrink:0 }}>
 
-                        <span style={{ width:8, height:8, borderRadius:"50%", background:col.dot, display:"inline-block" }} />
+                      <span style={{ fontWeight:700, fontSize:14, userSelect:"none", color:"var(--text-main)", display:"flex", alignItems:"center", gap:8 }}>
 
-                        {col.title}
+                        <span style={{ width:8, height:8, borderRadius:"50%", background:col.dot, display:"inline-block" }} />
 
-                      </span>
+                        {col.title}
 
-                      <div style={{ background:"white", color:"#667eea", fontSize:11, borderRadius:"50%", width:22, height:22, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, border:"1px solid var(--border)" }}>
+                      </span>
 
-                        {cards.length}
+                      <div style={{ background:"white", color:"#667eea", fontSize:11, borderRadius:"50%", width:22, height:22, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, border:"1px solid var(--border)" }}>
 
-                      </div>
+                        {cards.length}
 
-                    </div>
+                      </div>
 
+                    </div>
 
 
-                    {/* Cards */}
 
-                    <div style={{ flex:1, overflowY:"auto", padding:"14px" }}>
+                    {/* Cards */}
 
-                      {cards.length === 0 && col.id !== "in-progress" && col.id !== "done" && (
+                    <div style={{ flex:1, overflowY:"auto", padding:"14px" }}>
 
-                        <div style={{ textAlign:"center", paddingTop:10 }}>
+                      {cards.length === 0 && col.id !== "in-progress" && col.id !== "done" && (
 
-                          <button onClick={() => openAddModal(col.id)} style={{ background:"none", border:"none", color:"var(--text-muted)", fontSize:22, cursor:"pointer" }}>+</button>
+                        <div style={{ textAlign:"center", paddingTop:10 }}>
 
-                        </div>
+                          <button onClick={() => openAddModal(col.id)} style={{ background:"none", border:"none", color:"var(--text-muted)", fontSize:22, cursor:"pointer" }}>+</button>
 
-                      )}
+                        </div>
 
+                      )}
 
 
-                      {cards.map(quest => {
 
-                        const cardColor = CARD_COLORS.find(c => c.bg === quest.color);
+                      {cards.map(quest => {
 
-                        return (
+                        const cardColor = CARD_COLORS.find(c => c.bg === quest.color);
 
-                          <div key={quest.id} draggable
+                        return (
 
-                            onDragStart={e => handleDragStart(e, quest.id)}
+                          <div key={quest.id} draggable
 
-                            style={{
+                            onDragStart={e => handleDragStart(e, quest.id)}
 
-                              background: quest.color || "var(--bg-card)",
+                            style={{
 
-                              border: `1px solid ${cardColor?.border || "var(--border-card)"}`,
+                              background: quest.color || "var(--bg-card)",
 
-                              borderRadius:10, padding:"12px", marginBottom:10,
+                              border: `1px solid ${cardColor?.border || "var(--border-card)"}`,
 
-                              cursor:"grab", boxShadow:"0 2px 6px var(--shadow)",
+                              borderRadius:10, padding:"12px", marginBottom:10,
 
-                              transition:"border-color .15s, background .2s",
+                              cursor:"grab", boxShadow:"0 2px 6px var(--shadow)",
 
-                            }}
+                              transition:"border-color .15s, background .2s",
 
-                            onMouseOver={e => e.currentTarget.style.borderColor = cardColor?.border || "var(--accent)"}
+                            }}
 
-                            onMouseOut={e => e.currentTarget.style.borderColor = cardColor?.border || "var(--border-card)"}>
+                            onMouseOver={e => e.currentTarget.style.borderColor = cardColor?.border || "var(--accent)"}
 
+                            onMouseOut={e => e.currentTarget.style.borderColor = cardColor?.border || "var(--border-card)"}>
 
 
-                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
 
-                              <span style={{
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
 
-                                fontSize:9.5, fontWeight:700, padding:"3px 9px", borderRadius:999,
+                              <span style={{
 
-                                textTransform:"uppercase", letterSpacing:"0.4px",
+                                fontSize:9.5, fontWeight:700, padding:"3px 9px", borderRadius:999,
 
-                                background: priorityStyle(quest.priority).bg,
+                                textTransform:"uppercase", letterSpacing:"0.4px",
 
-                                color: priorityStyle(quest.priority).text
+                                background: priorityStyle(quest.priority).bg,
 
-                              }}>{priorityStyle(quest.priority).label}</span>
+                                color: priorityStyle(quest.priority).text
 
-                              {<span onClick={() => deleteQuest(quest.id)} style={{ cursor:"pointer", color:"var(--text-muted)", fontSize:11, flexShrink:0, opacity:0.6 }}>✕</span>}
+                              }}>{priorityStyle(quest.priority).label}</span>
 
-                            </div>
+                              {<span onClick={() => deleteQuest(quest.id)} style={{ cursor:"pointer", color:"var(--text-muted)", fontSize:11, flexShrink:0, opacity:0.6 }}>✕</span>}
 
+                            </div>
 
 
-                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:6, marginBottom:8 }}>
 
-                              <p style={{ margin:0, fontWeight:600, fontSize:13, color:"var(--text-main)", lineHeight:1.4, wordBreak:"break-word", flex:1 }}>{quest.title}</p>
+                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:6, marginBottom:8 }}>
 
-                            </div>
+                              <p style={{ margin:0, fontWeight:600, fontSize:13, color:"var(--text-main)", lineHeight:1.4, wordBreak:"break-word", flex:1 }}>{quest.title}</p>
 
+                            </div>
 
 
-                            {quest.due_date && (
 
-                              <div style={{ fontSize:10.5, color:"var(--text-muted)", marginBottom:8, display:"flex", alignItems:"center", gap:5 }}>
+                            {quest.due_date && (
 
-                                <span>Due:</span>
+                              <div style={{ fontSize:10.5, color:"var(--text-muted)", marginBottom:8, display:"flex", alignItems:"center", gap:5 }}>
 
-                                <strong style={{ color:"var(--text-main)", fontWeight:600 }}>{formatDateLabel(toDateKey(quest.due_date))}</strong>
+                                <span>Due:</span>
 
-                              </div>
+                                <strong style={{ color:"var(--text-main)", fontWeight:600 }}>{formatDateLabel(toDateKey(quest.due_date))}</strong>
 
-                            )}
+                              </div>
 
+                            )}
 
 
-                            <div style={{ display:"flex", flexDirection:"column", gap:4, marginBottom:10, background:"var(--bg-note-box)", padding:"6px 8px", borderRadius:6 }}>
 
-                              <AutoGrowTextarea
+                            <div style={{ display:"flex", flexDirection:"column", gap:4, marginBottom:10, background:"var(--bg-note-box)", padding:"6px 8px", borderRadius:6 }}>
 
-                                value={quest.note || ""}
+                              <AutoGrowTextarea
 
-                                onChange={e => setQuestNote(quest.id, e.target.value)}
+                                value={quest.note || ""}
 
-                                onBlur={() => syncNoteOnBlur(quest)}
+                                onChange={e => setQuestNote(quest.id, e.target.value)}
 
-                                placeholder="Add note..."
+                                onBlur={() => syncNoteOnBlur(quest)}
 
-                              />
+                                placeholder="Add note..."
 
-                            </div>
+                              />
 
+                            </div>
 
 
-                            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
 
-                              <ColorPicker currentColor={quest.color} onChange={color => setQuestColor(quest.id, color)} />
+                            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
 
-                              {quest.status === "done" && <span style={{ fontSize:11, color:"var(--green)", fontWeight:600 }}>✓ Done</span>}
+                              <ColorPicker currentColor={quest.color} onChange={color => setQuestColor(quest.id, color)} />
 
-                              {quest.status === "in-progress" && (
+                              {quest.status === "done" && <span style={{ fontSize:11, color:"var(--green)", fontWeight:600 }}>✓ Done</span>}
 
-                                <span style={{ fontFamily:"monospace", fontSize:11, color:"var(--green)", fontWeight:600 }}>
+                              {quest.status === "in-progress" && (
 
-                                  {formatTime(quest.time)}
+                                <span style={{ fontFamily:"monospace", fontSize:11, color:"var(--green)", fontWeight:600 }}>
 
-                                </span>
+                                  {formatTime(quest.time)}
 
-                              )}
+                                </span>
 
-                            </div>
+                              )}
 
-                          </div>
+                            </div>
 
-                        );
+                          </div>
 
-                      })}
+                        );
 
+                      })}
 
 
-                      {cards.length > 0 && col.id !== "in-progress" && col.id !== "done" && (
 
-                        <div style={{ textAlign:"center", marginTop:4 }}>
+                      {cards.length > 0 && col.id !== "in-progress" && col.id !== "done" && (
 
-                          <button onClick={() => openAddModal(col.id)} style={{ background:"none", border:"none", color:"var(--text-muted)", fontSize:20, cursor:"pointer" }}>+</button>
+                        <div style={{ textAlign:"center", marginTop:4 }}>
 
-                        </div>
+                          <button onClick={() => openAddModal(col.id)} style={{ background:"none", border:"none", color:"var(--text-muted)", fontSize:20, cursor:"pointer" }}>+</button>
 
-                      )}
+                        </div>
 
-                    </div>
+                      )}
 
-                  </div>
+                    </div>
 
-                );
+                  </div>
 
-              })}
+                );
 
-            </div>
+              })}
 
-          )}
+            </div>
 
-        </div>
+          )}
 
+        </div>
 
 
-        {/* ── Sidebar toggle ── */}
 
-        <button
+        {/* ── Sidebar toggle ── */}
 
-          onClick={() => setSidebarOpen(!sidebarOpen)}
+        <button
 
-          title={sidebarOpen ? "Sembunyikan sidebar" : "Tampilkan sidebar"}
+          onClick={() => setSidebarOpen(!sidebarOpen)}
 
-          style={{
+          title={sidebarOpen ? "Sembunyikan sidebar" : "Tampilkan sidebar"}
 
-            position:"absolute", top:"50%",
+          style={{
 
-            right: sidebarOpen ? "240px" : "0px",
+            position:"absolute", top:"50%",
 
-            transform:"translate(50%, -50%)",
+            right: sidebarOpen ? "240px" : "0px",
 
-            width:30, height:30, borderRadius:"50%",
+            transform:"translate(50%, -50%)",
 
-            border:"1px solid var(--border)", background:"#ffffff",
+            width:30, height:30, borderRadius:"50%",
 
-            color:"#667eea", cursor:"pointer",
+            border:"1px solid var(--border)", background:"#ffffff",
 
-            display:"flex", alignItems:"center", justifyContent:"center",
+            color:"#667eea", cursor:"pointer",
 
-            fontSize:12, fontWeight:700,
+            display:"flex", alignItems:"center", justifyContent:"center",
 
-            boxShadow:"0 3px 8px rgba(0,0,0,0.15)",
+            fontSize:12, fontWeight:700,
 
-            zIndex:99, transition:"right 0.25s ease",
+            boxShadow:"0 3px 8px rgba(0,0,0,0.15)",
 
-          }}
+            zIndex:99, transition:"right 0.25s ease",
 
-        >
+          }}
 
-          {sidebarOpen ? "▶" : "◀"}
+        >
 
-        </button>
+          {sidebarOpen ? "▶" : "◀"}
 
+        </button>
 
 
-        {/* ── Right Sidebar ── */}
 
-        <div style={{
+        {/* ── Right Sidebar ── */}
 
-          width: sidebarOpen ? 240 : 0,
+        <div style={{
 
-          borderLeft: sidebarOpen ? "1px solid var(--border)" : "none",
+          width: sidebarOpen ? 240 : 0,
 
-          background:"var(--sidebar-surface)",
+          borderLeft: sidebarOpen ? "1px solid var(--border)" : "none",
 
-          display:"flex", flexDirection:"column",
+          background:"var(--sidebar-surface)",
 
-          overflowY:"auto", flexShrink:0,
+          display:"flex", flexDirection:"column",
 
-          backdropFilter:"blur(12px)",
+          overflowY:"auto", flexShrink:0,
 
-          transition:"width 0.25s ease",
+          backdropFilter:"blur(12px)",
 
-          overflow:"hidden",
+          transition:"width 0.25s ease",
 
-        }}>
+          overflow:"hidden",
 
-          {sidebarOpen && (
+        }}>
 
-            <>
+          {sidebarOpen && (
 
-              <SideSection title="Task">
+            <>
 
-                {quests.filter(q => q.status === "in-progress").length === 0 ? (
+              <SideSection title="Task">
 
-                  <div style={{ padding:"12px 14px" }}>
+                {quests.filter(q => q.status === "in-progress").length === 0 ? (
 
-                    <div style={{ fontWeight:500, fontSize:12, color:"var(--text-muted)", whiteSpace:"normal" }}>Tidak ada tugas yang sedang dikerjakan</div>
+                  <div style={{ padding:"12px 14px" }}>
 
-                  </div>
+                    <div style={{ fontWeight:500, fontSize:12, color:"var(--text-muted)", whiteSpace:"normal" }}>Tidak ada tugas yang sedang dikerjakan</div>
 
-                ) : (
+                  </div>
 
-                  <div style={{ padding:"6px 12px" }}>
+                ) : (
 
-                    {quests.filter(q => q.status === "in-progress").map(q => (
+                  <div style={{ padding:"6px 12px" }}>
 
-                      <div key={q.id} style={{
+                    {quests.filter(q => q.status === "in-progress").map(q => (
 
-                        padding:"10px", borderRadius:8,
+                      <div key={q.id} style={{
 
-                        background: q.color || "var(--bg-timer)",
+                        padding:"10px", borderRadius:8,
 
-                        border: `0.5px solid ${CARD_COLORS.find(c=>c.bg===q.color)?.border || "var(--border)"}`,
+                        background: q.color || "var(--bg-timer)",
 
-                        marginBottom:8, fontSize:12, boxShadow:"0 1px 3px var(--shadow)",
+                        border: `0.5px solid ${CARD_COLORS.find(c=>c.bg===q.color)?.border || "var(--border)"}`,
 
-                      }}>
+                        marginBottom:8, fontSize:12, boxShadow:"0 1px 3px var(--shadow)",
 
-                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:4, marginBottom:4 }}>
+                      }}>
 
-                          <div style={{ fontWeight:600, color:"var(--text-main)", fontSize:12, wordBreak:"break-word", whiteSpace:"normal" }}>{q.title}</div>
+                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:4, marginBottom:4 }}>
 
-                          {<span onClick={() => deleteQuest(q.id)} style={{ cursor:"pointer", color:"var(--text-muted)", fontSize:11, opacity:0.6 }}>✕</span>}
+                          <div style={{ fontWeight:600, color:"var(--text-main)", fontSize:12, wordBreak:"break-word", whiteSpace:"normal" }}>{q.title}</div>
 
-                        </div>
+                          {<span onClick={() => deleteQuest(q.id)} style={{ cursor:"pointer", color:"var(--text-muted)", fontSize:11, opacity:0.6 }}>✕</span>}
 
-                        {q.note && <div style={{ fontSize:11, color:"var(--text-muted)", marginBottom:6, wordBreak:"break-word", lineHeight:"1.4", whiteSpace:"pre-wrap" }}>{q.note}</div>}
+                        </div>
 
-                        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginTop:4 }}>
+                        {q.note && <div style={{ fontSize:11, color:"var(--text-muted)", marginBottom:6, wordBreak:"break-word", lineHeight:"1.4", whiteSpace:"pre-wrap" }}>{q.note}</div>}
 
-                          <span style={{ fontFamily:"monospace", color: q.isRunning ? "var(--green)" : "var(--text-muted)", fontWeight: q.isRunning ? 700 : 400, fontSize:12 }}>
+                        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginTop:4 }}>
 
-                            {formatTime(q.time)}
+                          <span style={{ fontFamily:"monospace", color: q.isRunning ? "var(--green)" : "var(--text-muted)", fontWeight: q.isRunning ? 700 : 400, fontSize:12 }}>
 
-                          </span>
+                            {formatTime(q.time)}
 
-                          <button onClick={() => toggleTimer(q.id)} style={{
+                          </span>
 
-                            background: q.isRunning ? "var(--amber-bg)" : "var(--green-bg)",
+                          <button onClick={() => toggleTimer(q.id)} style={{
 
-                            color: q.isRunning ? "var(--amber)" : "var(--green)",
+                            background: q.isRunning ? "var(--amber-bg)" : "var(--green-bg)",
 
-                            border: `0.5px solid ${q.isRunning ? "var(--amber)" : "var(--green)"}`,
+                            color: q.isRunning ? "var(--amber)" : "var(--green)",
 
-                            borderRadius:5, padding:"2px 9px", cursor:"pointer", fontSize:12,
+                            border: `0.5px solid ${q.isRunning ? "var(--amber)" : "var(--green)"}`,
 
-                          }}>
+                            borderRadius:5, padding:"2px 9px", cursor:"pointer", fontSize:12,
 
-                            {q.isRunning ? "⏸" : "▶"}
+                          }}>
 
-                          </button>
+                            {q.isRunning ? "⏸" : "▶"}
 
-                        </div>
+                          </button>
 
-                      </div>
+                        </div>
 
-                    ))}
+                      </div>
 
-                  </div>
+                    ))}
 
-                )}
+                  </div>
 
-              </SideSection>
+                )}
 
+              </SideSection>
 
 
-              <SideSection title="Schedule"><MiniCalendar quests={quests} /></SideSection>
 
+              <SideSection title="Schedule"><MiniCalendar quests={quests} /></SideSection>
 
 
-              <SideSection title="Completed Tasks Log">
 
-                <div style={{ padding:"12px 14px" }}>
+              <SideSection title="Completed Tasks Log">
 
-                  {quests.filter(q => q.status === "done").length === 0 ? (
+                <div style={{ padding:"12px 14px" }}>
 
-                    <p style={{ fontSize:12, color:"var(--text-muted)", margin:0, lineHeight:1.5, whiteSpace:"normal" }}>
+                  {quests.filter(q => q.status === "done").length === 0 ? (
 
-                      Kartu yang sudah selesai akan tampil di sini.
+                    <p style={{ fontSize:12, color:"var(--text-muted)", margin:0, lineHeight:1.5, whiteSpace:"normal" }}>
 
-                    </p>
+                      Kartu yang sudah selesai akan tampil di sini.
 
-                  ) : (
+                    </p>
 
-                    quests.filter(q => q.status === "done").map(q => (
+                  ) : (
 
-                      <div key={q.id} style={{ marginBottom:8, padding:"8px", borderRadius:6, background: q.color || "var(--bg-timer)", border:`0.5px solid ${CARD_COLORS.find(c=>c.bg===q.color)?.border || "var(--border)"}` }}>
+                    quests.filter(q => q.status === "done").map(q => (
 
-                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:4 }}>
+                      <div key={q.id} style={{ marginBottom:8, padding:"8px", borderRadius:6, background: q.color || "var(--bg-timer)", border:`0.5px solid ${CARD_COLORS.find(c=>c.bg===q.color)?.border || "var(--border)"}` }}>
 
-                          <div style={{ color:"var(--text-main)", fontSize:12, fontWeight:500, wordBreak:"break-word", whiteSpace:"normal" }}>{q.title}</div>
+                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:4 }}>
 
-                          {<span onClick={() => deleteQuest(q.id)} style={{ cursor:"pointer", color:"var(--text-muted)", fontSize:11, opacity:0.6 }}>✕</span>}
+                          <div style={{ color:"var(--text-main)", fontSize:12, fontWeight:500, wordBreak:"break-word", whiteSpace:"normal" }}>{q.title}</div>
 
-                        </div>
+                          {<span onClick={() => deleteQuest(q.id)} style={{ cursor:"pointer", color:"var(--text-muted)", fontSize:11, opacity:0.6 }}>✕</span>}
 
-                        {q.note && <div style={{ fontSize:11, color:"var(--text-muted)", fontStyle:"italic", marginTop:2, whiteSpace:"pre-wrap" }}>"{q.note}"</div>}
+                        </div>
 
-                        <div style={{ color:"var(--text-muted)", fontSize:11, marginTop:4, fontFamily:"monospace" }}>{formatTime(q.time)} finish</div>
+                        {q.note && <div style={{ fontSize:11, color:"var(--text-muted)", fontStyle:"italic", marginTop:2, whiteSpace:"pre-wrap" }}>"{q.note}"</div>}
 
-                      </div>
+                        <div style={{ color:"var(--text-muted)", fontSize:11, marginTop:4, fontFamily:"monospace" }}>{formatTime(q.time)} finish</div>
 
-                    ))
+                      </div>
 
-                  )}
+                    ))
 
-                </div>
+                  )}
 
-              </SideSection>
+                </div>
 
-            </>
+              </SideSection>
 
-          )}
+            </>
 
-        </div>
+          )}
 
-      </div>
+        </div>
 
+      </div>
 
 
-      <style>{`
 
-        :root {
+      <style>{`
 
-          --bg-surface:       rgba(255,255,255,0.92);
+        :root {
 
-          --sidebar-surface:  rgba(250,250,248,0.88);
+          --bg-surface:       rgba(255,255,255,0.92);
 
-          --bg-header:        rgba(255,255,255,0.5);
+          --sidebar-surface:  rgba(250,250,248,0.88);
 
-          --bg-column:        rgba(255,255,255,0.4);
+          --bg-header:        rgba(255,255,255,0.5);
 
-          --bg-column-hover:  rgba(235,245,255,0.55);
+          --bg-column:        rgba(255,255,255,0.4);
 
-          --bg-card:          #ffffff;
+          --bg-column-hover:  rgba(235,245,255,0.55);
 
-          --bg-badge:         rgba(0,0,0,0.06);
+          --bg-card:          #ffffff;
 
-          --bg-timer:         #ffffff;
+          --bg-badge:         rgba(0,0,0,0.06);
 
-          --bg-note-box:      rgba(0,0,0,0.03);
+          --bg-timer:         #ffffff;
 
-          --border:           rgba(0,0,0,0.12);
+          --bg-note-box:      rgba(0,0,0,0.03);
 
-          --border-card:      rgba(0,0,0,0.1);
+          --border:           rgba(0,0,0,0.12);
 
-          --text-main:        #2b2b29;
+          --border-card:      rgba(0,0,0,0.1);
 
-          --text-muted:       #6e6e6b;
+          --text-main:        #2b2b29;
 
-          --accent:           #667eea;
+          --text-muted:       #6e6e6b;
 
-          --shadow:           rgba(0,0,0,0.04);
+          --accent:           #667eea;
 
-          --green:            #16a34a; --green-bg: rgba(22,163,74,0.1);
+          --shadow:           rgba(0,0,0,0.04);
 
-          --amber:            #d97706; --amber-bg: rgba(217,119,6,0.1);
+          --green:            #16a34a; --green-bg: rgba(22,163,74,0.1);
 
-        }
+          --amber:            #d97706; --amber-bg: rgba(217,119,6,0.1);
 
-        * { box-sizing: border-box; } body { margin: 0; }
+        }
 
-        ::-webkit-scrollbar { width:6px; height:6px; }
+        * { box-sizing: border-box; } body { margin: 0; }
 
-        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar { width:6px; height:6px; }
 
-        ::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+        ::-webkit-scrollbar-track { background:transparent; }
 
-      `}</style>
+        ::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
 
-    </div>
+      `}</style>
 
-  );
+    </div>
+
+  );
 
 }

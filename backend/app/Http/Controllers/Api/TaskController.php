@@ -72,6 +72,7 @@ class TaskController extends Controller
             'status'      => 'nullable|in:backlog,todo,in-progress,done',
             'priority'    => 'nullable|in:sangat-tinggi,tinggi,sedang,rendah,sangat-rendah',
             'color'       => 'nullable|string',
+            'start_date'  => 'nullable|date',
             'due_date'    => 'nullable|date',
             'time'        => 'nullable|integer|min:0',
             'is_running'  => 'nullable|boolean',
@@ -108,6 +109,7 @@ class TaskController extends Controller
                 'color'        => $data['color'] ?? null,
                 'time'         => $data['time'] ?? 0,
                 'is_running'   => $data['is_running'] ?? false,
+                'start_date'   => $data['start_date'] ?? null,
                 'due_date'     => $data['due_date'] ?? null,
                 'completed_at' => $status === 'done' ? now() : null,
             ]);
@@ -144,6 +146,7 @@ class TaskController extends Controller
             'is_running'  => 'sometimes|boolean',
             'description' => 'sometimes|nullable|string',
             'color'       => 'sometimes|nullable|string',
+            'start_date'  => 'sometimes|nullable|date',
             'due_date'    => 'sometimes|nullable|date',
             'assignees'   => 'sometimes|array',
             'assignees.*' => 'required|integer|distinct|exists:users,id',
@@ -176,6 +179,7 @@ class TaskController extends Controller
                 'priority',
                 'time',
                 'color',
+                'start_date',
                 'due_date',
             ] as $field) {
                 if (array_key_exists($field, $data)) {

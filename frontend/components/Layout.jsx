@@ -29,7 +29,7 @@ const NAV_ITEMS = [
   },
   {
     id: 'schedule',
-    label: 'Schedule',
+    label: 'Calendar',
     icon: CalendarDays
   },
   {

@@ -39,6 +39,8 @@ class BoardController extends Controller
                     'name'          => $board->name,
                     'category'      => $board->category,
                     'cover_image'   => $board->cover_image,
+                    'background'    => $board->background ?? 'whiteboard',
+                    'background_image' => $board->background_image,
                     'owner_id'      => $board->owner_id,
                     'created_at'    => $board->created_at,
                     'updated_at'    => $board->updated_at,
@@ -77,6 +79,41 @@ class BoardController extends Controller
         return response()->json($boards);
     }
 
+
+    // Global calendar data for every board the current user belongs to.
+    public function calendarTasks(Request $request)
+    {
+        $tasks = \App\Models\Task::query()
+            ->whereHas('board.members', fn ($query) => $query->where('users.id', $request->user()->id))
+            ->with(['board:id,name', 'assignees:id,username,fullname'])
+            ->orderBy('due_date')
+            ->get();
+        return response()->json($tasks);
+    }
+
+    public function updateAppearance(Request $request, Board $board)
+    {
+        if ($board->roleOf($request->user()) !== 'admin') {
+            return response()->json(['error' => 'Hanya admin yang dapat mengubah background board.'], 403);
+        }
+        $data = $request->validate([
+            'background' => 'required|string|in:whiteboard,green,blue,cream,dark',
+            'background_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
+            'remove_background_image' => 'nullable|boolean',
+        ]);
+        if ($request->hasFile('background_image')) {
+            if ($board->background_image) Storage::disk('public')->delete($board->background_image);
+            $data['background_image'] = $request->file('background_image')->store('board-backgrounds', 'public');
+        } elseif ($board->background_image) {
+            // Switching to a preset clears the previously uploaded custom image.
+            Storage::disk('public')->delete($board->background_image);
+            $data['background_image'] = null;
+        }
+        $board->background = $data['background'];
+        if (array_key_exists('background_image', $data)) $board->background_image = $data['background_image'];
+        $board->save();
+        return response()->json(['success' => true, 'background' => $board->background, 'background_image' => $board->background_image]);
+    }
 
     // =========================================================
     // CREATE BOARD
@@ -163,6 +200,8 @@ class BoardController extends Controller
             'name'        => $board->name,
             'category'    => $board->category,
             'cover_image' => $board->cover_image,
+            'background'  => $board->background ?? 'whiteboard',
+            'background_image' => $board->background_image,
             'owner_id'    => $board->owner_id,
             'created_at'  => $board->created_at,
             'role'        => $role,
@@ -240,6 +279,8 @@ class BoardController extends Controller
                 'name'        => $board->name,
                 'category'    => $board->category,
                 'cover_image' => $board->cover_image,
+                'background'  => $board->background ?? 'whiteboard',
+                'background_image' => $board->background_image,
                 'role'        => 'member',
             ],
         ], 201);

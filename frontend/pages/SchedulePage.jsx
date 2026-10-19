@@ -4,10 +4,10 @@ import { api } from "../utils/api.js";
 import {
   ChevronLeft,
   ChevronRight,
-  CalendarDays,
-  Clock3,
   CircleCheck,
   Circle,
+  LoaderCircle,
+  CalendarX2,
 } from "lucide-react";
 
 const MONTHS = [
@@ -87,29 +87,46 @@ function getCalendarDays(year, month) {
 }
 
 // ============================================================
-// PRIORITY
+// WARNA PER BOARD + PRIORITAS
 // ============================================================
 
-function getPriorityStyle(priority) {
-  switch (priority) {
-    case "tinggi":
-      return {
-        background: "#fee2e2",
-        color: "#b91c1c",
-      };
+const BOARD_COLORS = [
+  "#f97316",
+  "#3b73d8",
+  "#2f9e5f",
+  "#a24fc4",
+  "#d6453d",
+  "#0f8fa0",
+  "#c9951a",
+];
 
-    case "rendah":
-      return {
-        background: "#f1f5f9",
-        color: "#475569",
-      };
+function boardColor(boardId) {
+  const n = Number(boardId);
+  const seed = Number.isFinite(n)
+    ? n
+    : String(boardId || "")
+        .split("")
+        .reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
 
-    default:
-      return {
-        background: "#ffedd5",
-        color: "#c2410c",
-      };
+  return BOARD_COLORS[Math.abs(seed) % BOARD_COLORS.length];
+}
+
+const PRIORITY_LABEL = {
+  "sangat-tinggi": "Sangat tinggi",
+  tinggi: "Tinggi",
+  sedang: "Sedang",
+  rendah: "Rendah",
+  "sangat-rendah": "Sangat rendah",
+};
+
+function priorityTone(priority) {
+  if (priority === "sangat-tinggi" || priority === "tinggi") {
+    return { background: "#fdecea", color: "#b42318" };
   }
+  if (priority === "rendah" || priority === "sangat-rendah") {
+    return { background: "#eaf1fb", color: "#2f5fb3" };
+  }
+  return { background: "#fdf3e1", color: "#a8661a" };
 }
 
 // ============================================================
@@ -410,1177 +427,475 @@ export default function SchedulePage({ boardId, boardName }) {
   // RENDER
   // ==========================================================
 
+  const todayKey = formatDateKey(today);
+
+  const cells = [...calendarDays];
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const selectedLabel = new Date(`${selectedDate}T00:00:00`).toLocaleDateString(
+    "id-ID",
+    { weekday: "long", day: "numeric", month: "long", year: "numeric" }
+  );
+
+  const upcoming = useMemo(
+    () =>
+      tasks
+        .filter(
+          (t) =>
+            t.due_date && t.due_date >= todayKey && t.status !== "done"
+        )
+        .sort((a, b) => a.due_date.localeCompare(b.due_date))
+        .slice(0, 5),
+    [tasks, todayKey]
+  );
+
+  const monthPrefix = `${year}-${String(month + 1).padStart(2, "0")}`;
+  const monthTasks = tasks.filter(
+    (t) => t.due_date && t.due_date.startsWith(monthPrefix)
+  );
+  const monthDone = monthTasks.filter((t) => t.status === "done").length;
+
+  const boardLegend = useMemo(() => {
+    const seen = new Map();
+    tasks.forEach((t) => {
+      if (!seen.has(t.board_id)) seen.set(t.board_id, t.board_name);
+    });
+    return [...seen.entries()];
+  }, [tasks]);
+
+  const StatusIcon = ({ status }) =>
+    status === "done" ? (
+      <CircleCheck size={17} color="#2f9e5f" />
+    ) : status === "in-progress" ? (
+      <LoaderCircle size={17} color="#f97316" />
+    ) : (
+      <Circle size={17} color="#b9b5a8" />
+    );
+
   return (
-    <div
-      style={{
-        minHeight: "100%",
-        background: "#f4f3ee",
-        padding: "28px",
-        fontFamily:
-          "system-ui, sans-serif",
-        color: "#2b2b29",
-        boxSizing: "border-box",
-        width: "100%",
-        overflowX: "hidden",
-      }}
-    >
-      {/* ====================================================
-          HEADER
-          ==================================================== */}
+    <div className="k-page" style={{ padding: "26px 34px 56px" }}>
+      <div style={{ maxWidth: 1240, margin: "0 auto" }}>
+        {/* HEADER */}
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent:
-            "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-          gap: 16,
-          flexWrap: "wrap",
-        }}
-      >
-        <div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-            }}
-          >
-            <CalendarDays
-              size={24}
-              strokeWidth={1.8}
-            />
-
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-end",
+            gap: 16,
+            flexWrap: "wrap",
+            marginBottom: 18,
+          }}
+        >
+          <div>
+            <div className="k-eyebrow" style={{ marginBottom: 4 }}>
+              {boardName ? `Board ${boardName}` : "Semua board"}
+            </div>
             <h1
-              style={{
-                margin: 0,
-                fontSize: 24,
-                fontWeight: 700,
-              }}
-            >
-              Schedule
-            </h1>
-          </div>
-
-          <p
-            style={{
-              margin:
-                "6px 0 0",
-              color: "#73736e",
-              fontSize: 13,
-            }}
-          >
-            {boardName
-              ? `Deadline tugas dari board ${boardName}`
-              : "Jadwal dan deadline tugas dari semua board"}
-          </p>
-        </div>
-
-        <button
-          onClick={goToday}
-          style={{
-            border:
-              "1px solid #d7d4cc",
-            background: "#fff",
-            borderRadius: 8,
-            padding:
-              "8px 14px",
-            cursor: "pointer",
-            fontSize: 12,
-            fontWeight: 600,
-            color: "#333",
-          }}
-        >
-          Hari Ini
-        </button>
-      </div>
-
-      {/* ====================================================
-          ERROR
-          ==================================================== */}
-
-      {error && (
-        <div
-          style={{
-            marginBottom: 16,
-            padding:
-              "10px 14px",
-            background:
-              "#fff1f2",
-            border:
-              "1px solid #fecdd3",
-            borderRadius: 8,
-            color: "#be123c",
-            fontSize: 12,
-          }}
-        >
-          {error}
-        </div>
-      )}
-
-      {/* ====================================================
-          MAIN
-          ==================================================== */}
-
-      <div
-        className="schedule-main"
-        style={{
-          display: "grid",
-
-          /*
-           * PENTING:
-           * minmax(0, 1fr) mencegah
-           * isi kalender memaksa kolom melebar.
-           */
-          gridTemplateColumns:
-            "minmax(0, 1fr) 300px",
-
-          gap: 20,
-
-          width: "100%",
-          minWidth: 0,
-        }}
-      >
-        {/* ==================================================
-            CALENDAR
-            ================================================== */}
-
-        <div
-          style={{
-            background: "#fff",
-            border:
-              "1px solid #e1ded6",
-            borderRadius: 16,
-            overflow: "hidden",
-            minWidth: 0,
-            width: "100%",
-            boxSizing: "border-box",
-          }}
-        >
-          {/* MONTH HEADER */}
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent:
-                "space-between",
-
-              padding:
-                "18px 20px",
-
-              borderBottom:
-                "1px solid #ebe8e1",
-            }}
-          >
-            <button
-              onClick={
-                previousMonth
-              }
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: 8,
-                border:
-                  "1px solid #ddd9d0",
-                background: "#fff",
-                cursor: "pointer",
-
-                display: "flex",
-                alignItems:
-                  "center",
-                justifyContent:
-                  "center",
-
-                flexShrink: 0,
-              }}
-            >
-              <ChevronLeft
-                size={18}
-              />
-            </button>
-
-            <h2
-              style={{
-                margin: 0,
-                fontSize: 17,
-                fontWeight: 700,
-              }}
+              className="k-display"
+              style={{ margin: 0, fontSize: 34, fontWeight: 600, lineHeight: 1.05 }}
             >
               {MONTHS[month]}{" "}
-              {year}
-            </h2>
+              <span style={{ color: "var(--k-faint)" }}>{year}</span>
+            </h1>
+            <p style={{ margin: "6px 0 0", fontSize: 13, color: "var(--k-muted)" }}>
+              {monthTasks.length === 0
+                ? "Tidak ada deadline bulan ini."
+                : `${monthTasks.length} deadline bulan ini, ${monthDone} sudah selesai.`}
+            </p>
+          </div>
 
+          <div style={{ display: "flex", gap: 8 }}>
             <button
-              onClick={
-                nextMonth
-              }
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: 8,
-                border:
-                  "1px solid #ddd9d0",
-                background: "#fff",
-                cursor: "pointer",
-
-                display: "flex",
-                alignItems:
-                  "center",
-                justifyContent:
-                  "center",
-
-                flexShrink: 0,
-              }}
+              type="button"
+              className="k-btn"
+              onClick={previousMonth}
+              aria-label="Bulan sebelumnya"
+              style={{ padding: 10 }}
             >
-              <ChevronRight
-                size={18}
-              />
+              <ChevronLeft size={16} />
             </button>
-          </div>
-
-          {/* DAY HEADER */}
-
-          <div
-            style={{
-              display: "grid",
-
-              /*
-               * PENTING:
-               * minmax(0, 1fr)
-               * membuat setiap hari
-               * memiliki lebar yang aman.
-               */
-              gridTemplateColumns:
-                "repeat(7, minmax(0, 1fr))",
-
-              borderBottom:
-                "1px solid #ebe8e1",
-
-              minWidth: 0,
-            }}
-          >
-            {DAYS.map((day) => (
-              <div
-                key={day}
-                style={{
-                  padding:
-                    "10px 4px",
-
-                  textAlign:
-                    "center",
-
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: "#85847f",
-
-                  minWidth: 0,
-                  overflow: "hidden",
-                }}
-              >
-                {day}
-              </div>
-            ))}
-          </div>
-
-          {/* CALENDAR GRID */}
-
-          <div
-            style={{
-              display: "grid",
-
-              /*
-               * INI SALAH SATU PERBAIKAN UTAMA.
-               */
-              gridTemplateColumns:
-                "repeat(7, minmax(0, 1fr))",
-
-              width: "100%",
-              minWidth: 0,
-            }}
-          >
-            {calendarDays.map(
-              (day, index) => {
-                // ==================================================
-                // EMPTY CELL
-                // ==================================================
-
-                if (!day) {
-                  return (
-                    <div
-                      key={`empty-${index}`}
-                      style={{
-                        minHeight: 105,
-                        minWidth: 0,
-                        width: "100%",
-
-                        borderRight:
-                          "1px solid #eeeae2",
-                        borderBottom:
-                          "1px solid #eeeae2",
-
-                        background:
-                          "#faf9f6",
-
-                        boxSizing:
-                          "border-box",
-
-                        overflow: "hidden",
-                      }}
-                    />
-                  );
-                }
-
-                // ==================================================
-                // DATE
-                // ==================================================
-
-                const date =
-                  new Date(
-                    year,
-                    month,
-                    day
-                  );
-
-                const dateKey =
-                  formatDateKey(
-                    date
-                  );
-
-                const dayTasks =
-                  tasksByDate[
-                    dateKey
-                  ] || [];
-
-                const isToday =
-                  dateKey ===
-                  formatDateKey(
-                    today
-                  );
-
-                const isSelected =
-                  dateKey ===
-                  selectedDate;
-
-                return (
-                  <div
-                    key={dateKey}
-                    onClick={() =>
-                      setSelectedDate(
-                        dateKey
-                      )
-                    }
-                    style={{
-                      minHeight: 105,
-
-                      /*
-                       * PERBAIKAN PENTING
-                       */
-                      minWidth: 0,
-                      width: "100%",
-                      maxWidth: "100%",
-
-                      padding: 8,
-
-                      borderRight:
-                        "1px solid #eeeae2",
-                      borderBottom:
-                        "1px solid #eeeae2",
-
-                      background:
-                        isSelected
-                          ? "#fff8f2"
-                          : "#fff",
-
-                      cursor: "pointer",
-
-                      transition:
-                        "background .15s",
-
-                      boxSizing:
-                        "border-box",
-
-                      /*
-                       * Task tidak boleh
-                       * mendorong cell.
-                       */
-                      overflow: "hidden",
-                    }}
-                  >
-                    {/* DATE */}
-
-                    <div
-                      style={{
-                        width: 27,
-                        height: 27,
-                        borderRadius:
-                          "50%",
-
-                        display: "flex",
-                        alignItems:
-                          "center",
-                        justifyContent:
-                          "center",
-
-                        background:
-                          isToday
-                            ? "#f97316"
-                            : "transparent",
-
-                        color:
-                          isToday
-                            ? "#fff"
-                            : "#333",
-
-                        fontSize: 12,
-
-                        fontWeight:
-                          isToday
-                            ? 700
-                            : 500,
-
-                        marginBottom: 5,
-
-                        flexShrink: 0,
-                      }}
-                    >
-                      {day}
-                    </div>
-
-                    {/* TASK LIST */}
-
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection:
-                          "column",
-
-                        gap: 4,
-
-                        /*
-                         * PERBAIKAN UTAMA
-                         */
-                        minWidth: 0,
-                        width: "100%",
-                        maxWidth: "100%",
-                        overflow: "hidden",
-                      }}
-                    >
-                      {dayTasks
-                        .slice(0, 3)
-                        .map(
-                          (task) => {
-                            const priority =
-                              getPriorityStyle(
-                                task.priority
-                              );
-
-                            return (
-                              <div
-                                key={`${task.board_id}-${task.id}`}
-                                style={{
-                                  /*
-                                   * PERBAIKAN:
-                                   * card tidak boleh
-                                   * mempengaruhi ukuran
-                                   * grid.
-                                   */
-                                  width:
-                                    "100%",
-                                  minWidth: 0,
-                                  maxWidth:
-                                    "100%",
-
-                                  boxSizing:
-                                    "border-box",
-
-                                  padding:
-                                    "5px 6px",
-
-                                  borderRadius: 6,
-
-                                  background:
-                                    task.status ===
-                                    "done"
-                                      ? "#f0fdf4"
-                                      : "#f8f8f6",
-
-                                  border:
-                                    "1px solid #e7e5df",
-
-                                  fontSize: 10,
-                                  lineHeight:
-                                    1.25,
-
-                                  overflow:
-                                    "hidden",
-                                }}
-                              >
-                                {/* TASK TITLE */}
-
-                                <div
-                                  style={{
-                                    width:
-                                      "100%",
-                                    minWidth:
-                                      0,
-                                    maxWidth:
-                                      "100%",
-
-                                    fontWeight:
-                                      600,
-
-                                    /*
-                                     * INI YANG
-                                     * MEMBUAT ...
-                                     */
-                                    whiteSpace:
-                                      "nowrap",
-
-                                    overflow:
-                                      "hidden",
-
-                                    textOverflow:
-                                      "ellipsis",
-
-                                    textDecoration:
-                                      task.status ===
-                                      "done"
-                                        ? "line-through"
-                                        : "none",
-                                  }}
-                                  title={
-                                    task.title
-                                  }
-                                >
-                                  {task.title}
-                                </div>
-
-                                {/* PRIORITY + STATUS */}
-
-                                <div
-                                  style={{
-                                    marginTop: 3,
-
-                                    display:
-                                      "flex",
-
-                                    justifyContent:
-                                      "space-between",
-
-                                    alignItems:
-                                      "center",
-
-                                    gap: 4,
-
-                                    minWidth: 0,
-                                    width:
-                                      "100%",
-
-                                    overflow:
-                                      "hidden",
-                                  }}
-                                >
-                                  {/* PRIORITY */}
-
-                                  <span
-                                    style={{
-                                      padding:
-                                        "2px 4px",
-
-                                      borderRadius:
-                                        4,
-
-                                      background:
-                                        priority.background,
-
-                                      color:
-                                        priority.color,
-
-                                      fontSize: 8,
-
-                                      fontWeight:
-                                        700,
-
-                                      maxWidth:
-                                        "50%",
-
-                                      whiteSpace:
-                                        "nowrap",
-
-                                      overflow:
-                                        "hidden",
-
-                                      textOverflow:
-                                        "ellipsis",
-
-                                      flexShrink: 1,
-                                    }}
-                                  >
-                                    {task.priority ||
-                                      "sedang"}
-                                  </span>
-
-                                  {/* STATUS */}
-
-                                  <span
-                                    style={{
-                                      color:
-                                        "#8a8984",
-
-                                      fontSize: 8,
-
-                                      maxWidth:
-                                        "50%",
-
-                                      whiteSpace:
-                                        "nowrap",
-
-                                      overflow:
-                                        "hidden",
-
-                                      textOverflow:
-                                        "ellipsis",
-
-                                      flexShrink: 1,
-
-                                      textAlign:
-                                        "right",
-                                    }}
-                                  >
-                                    {getStatusLabel(
-                                      task.status
-                                    )}
-                                  </span>
-                                </div>
-
-                                {/* BOARD NAME */}
-
-                                {!boardId &&
-                                  task.board_name && (
-                                    <div
-                                      style={{
-                                        marginTop: 3,
-
-                                        color:
-                                          "#99968f",
-
-                                        fontSize: 8,
-
-                                        width:
-                                          "100%",
-
-                                        maxWidth:
-                                          "100%",
-
-                                        whiteSpace:
-                                          "nowrap",
-
-                                        overflow:
-                                          "hidden",
-
-                                        textOverflow:
-                                          "ellipsis",
-                                      }}
-                                      title={
-                                        task.board_name
-                                      }
-                                    >
-                                      {
-                                        task.board_name
-                                      }
-                                    </div>
-                                  )}
-                              </div>
-                            );
-                          }
-                        )}
-
-                      {/* MORE TASKS */}
-
-                      {dayTasks.length >
-                        3 && (
-                        <div
-                          style={{
-                            fontSize: 9,
-                            color:
-                              "#77756f",
-
-                            paddingLeft: 3,
-
-                            whiteSpace:
-                              "nowrap",
-
-                            overflow:
-                              "hidden",
-
-                            textOverflow:
-                              "ellipsis",
-
-                            minWidth: 0,
-                          }}
-                        >
-                          +
-                          {dayTasks.length -
-                            3}{" "}
-                          tugas lainnya
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              }
-            )}
+            <button type="button" className="k-btn" onClick={goToday}>
+              Hari ini
+            </button>
+            <button
+              type="button"
+              className="k-btn"
+              onClick={nextMonth}
+              aria-label="Bulan berikutnya"
+              style={{ padding: 10 }}
+            >
+              <ChevronRight size={16} />
+            </button>
           </div>
         </div>
 
-        {/* ==================================================
-            DETAIL SIDEBAR
-            ================================================== */}
-
-        <div
-          style={{
-            background: "#fff",
-
-            border:
-              "1px solid #e1ded6",
-
-            borderRadius: 16,
-
-            padding: 18,
-
-            height:
-              "fit-content",
-
-            minWidth: 0,
-
-            boxSizing:
-              "border-box",
-          }}
-        >
-          {/* LABEL */}
-
+        {error && (
           <div
             style={{
-              fontSize: 12,
-              color: "#77756f",
-              marginBottom: 5,
+              marginBottom: 16,
+              padding: "10px 14px",
+              background: "#fff1f0",
+              border: "1px solid #fbd0cc",
+              borderRadius: 10,
+              color: "#b42318",
+              fontSize: 12.5,
             }}
           >
-            Deadline
+            {error}
           </div>
+        )}
 
-          {/* SELECTED DATE */}
+        <div
+          className="k-split"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1fr) 320px",
+            gap: 20,
+            alignItems: "start",
+          }}
+        >
+          {/* KALENDER */}
 
-          <h3
-            style={{
-              margin:
-                "0 0 18px",
-
-              fontSize: 18,
-
-              lineHeight: 1.3,
-            }}
-          >
-            {new Date(
-              `${selectedDate}T00:00:00`
-            ).toLocaleDateString(
-              "id-ID",
-              {
-                weekday:
-                  "long",
-                day: "numeric",
-                month:
-                  "long",
-                year:
-                  "numeric",
-              }
-            )}
-          </h3>
-
-          {/* LOADING */}
-
-          {loading ? (
-            <div
-              style={{
-                color:
-                  "#85847f",
-                fontSize: 12,
-              }}
-            >
-              Memuat tugas...
-            </div>
-          ) : selectedTasks.length ===
-            0 ? (
-            // ==================================================
-            // EMPTY STATE
-            // ==================================================
-
-            <div
-              style={{
-                padding:
-                  "20px 10px",
-
-                textAlign:
-                  "center",
-
-                color:
-                  "#85847f",
-
-                fontSize: 12,
-              }}
-            >
-              <CalendarDays
-                size={28}
-                strokeWidth={1.5}
+          <div>
+            <div className="k-panel" style={{ overflow: "hidden" }}>
+              <div
                 style={{
-                  marginBottom: 8,
-                  opacity: 0.5,
+                  display: "grid",
+                  gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+                  borderBottom: "1px solid var(--k-line)",
+                  background: "#faf9f5",
                 }}
-              />
-
-              <div>
-                Tidak ada deadline
-                pada tanggal ini.
+              >
+                {DAYS.map((d) => (
+                  <div
+                    key={d}
+                    className="k-eyebrow"
+                    style={{ padding: "10px 0", textAlign: "center" }}
+                  >
+                    {d}
+                  </div>
+                ))}
               </div>
-            </div>
-          ) : (
-            // ==================================================
-            // SELECTED TASKS
-            // ==================================================
 
-            <div
-              style={{
-                display: "flex",
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+                }}
+              >
+                {cells.map((day, index) => {
+                  if (!day) {
+                    return <div key={`e-${index}`} className="k-cal-cell out" />;
+                  }
 
-                flexDirection:
-                  "column",
-
-                gap: 10,
-
-                minWidth: 0,
-              }}
-            >
-              {selectedTasks.map(
-                (task) => {
-                  const done =
-                    task.status ===
-                    "done";
-
-                  const priority =
-                    getPriorityStyle(
-                      task.priority
-                    );
+                  const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                  const dayTasks = tasksByDate[key] || [];
+                  const isToday = key === todayKey;
+                  const isSelected = key === selectedDate;
 
                   return (
-                    <div
-                      key={`${task.board_id}-${task.id}`}
-                      style={{
-                        padding: 12,
-
-                        border:
-                          "1px solid #e5e2da",
-
-                        borderRadius: 10,
-
-                        background:
-                          done
-                            ? "#f8faf8"
-                            : "#fff",
-
-                        minWidth: 0,
-
-                        boxSizing:
-                          "border-box",
-
-                        overflow:
-                          "hidden",
-                      }}
+                    <button
+                      type="button"
+                      key={key}
+                      className={`k-cal-cell${isSelected ? " sel" : ""}`}
+                      onClick={() => setSelectedDate(key)}
                     >
-                      <div
+                      <span
+                        className="k-num"
                         style={{
-                          display:
-                            "flex",
-
-                          gap: 8,
-
-                          alignItems:
-                            "flex-start",
-
-                          minWidth: 0,
+                          width: 24,
+                          height: 24,
+                          borderRadius: "50%",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 12.5,
+                          fontWeight: 600,
+                          background: isToday ? "var(--k-orange)" : "transparent",
+                          color: isToday ? "#fff" : "var(--k-ink-2)",
                         }}
                       >
-                        {/* CHECK */}
+                        {day}
+                      </span>
 
-                        {done ? (
-                          <CircleCheck
-                            size={17}
-                            color="#16a34a"
-                            flexShrink={0}
-                          />
-                        ) : (
-                          <Circle
-                            size={17}
-                            color="#9a9891"
-                            flexShrink={0}
-                          />
-                        )}
+                      {dayTasks.slice(0, 3).map((task) => {
+                        const color = boardColor(task.board_id);
+                        const isDone = task.status === "done";
 
-                        <div
+                        return (
+                          <span
+                            key={`${task.board_id}-${task.id}`}
+                            className="k-cal-pill"
+                            title={`${task.title} · ${task.board_name}`}
+                            style={{
+                              borderLeftColor: color,
+                              background: `${color}1a`,
+                              color: "var(--k-ink)",
+                              opacity: isDone ? 0.5 : 1,
+                              textDecoration: isDone ? "line-through" : "none",
+                            }}
+                          >
+                            {task.title}
+                          </span>
+                        );
+                      })}
+
+                      {dayTasks.length > 3 && (
+                        <span
                           style={{
-                            minWidth: 0,
-                            flex: 1,
+                            fontSize: 10.5,
+                            fontWeight: 600,
+                            color: "var(--k-muted)",
+                            paddingLeft: 2,
                           }}
                         >
-                          {/* TITLE */}
+                          +{dayTasks.length - 3} lagi
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
+            {boardLegend.length > 1 && (
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "6px 18px",
+                  marginTop: 14,
+                }}
+              >
+                {boardLegend.map(([id, name]) => (
+                  <span
+                    key={id}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 7,
+                      fontSize: 12,
+                      color: "var(--k-ink-2)",
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 9,
+                        height: 9,
+                        borderRadius: 3,
+                        background: boardColor(id),
+                      }}
+                    />
+                    {name}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* AGENDA */}
+
+          <aside style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <section className="k-panel" style={{ padding: "20px 20px 14px" }}>
+              <div className="k-eyebrow">Agenda</div>
+              <h2
+                className="k-display"
+                style={{
+                  margin: "4px 0 14px",
+                  fontSize: 20,
+                  fontWeight: 600,
+                  textTransform: "capitalize",
+                }}
+              >
+                {selectedLabel}
+              </h2>
+
+              {loading ? (
+                <p style={{ fontSize: 12.5, color: "var(--k-muted)" }}>
+                  Memuat jadwal...
+                </p>
+              ) : selectedTasks.length === 0 ? (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "20px 0 10px",
+                    color: "var(--k-muted)",
+                    fontSize: 12.5,
+                  }}
+                >
+                  <CalendarX2 size={22} style={{ marginBottom: 6, opacity: 0.6 }} />
+                  <div>Tidak ada deadline pada tanggal ini.</div>
+                </div>
+              ) : (
+                <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                  {selectedTasks.map((task) => {
+                    const color = boardColor(task.board_id);
+                    const tone = priorityTone(task.priority);
+                    const isDone = task.status === "done";
+
+                    return (
+                      <li
+                        key={`${task.board_id}-${task.id}`}
+                        style={{
+                          display: "flex",
+                          gap: 11,
+                          padding: "12px 0",
+                          borderTop: "1px solid var(--k-line-soft)",
+                        }}
+                      >
+                        <span style={{ marginTop: 1 }}>
+                          <StatusIcon status={task.status} />
+                        </span>
+
+                        <div style={{ minWidth: 0, flex: 1 }}>
                           <div
                             style={{
-                              fontSize: 13,
-
-                              fontWeight:
-                                600,
-
-                              lineHeight:
-                                1.35,
-
-                              textDecoration:
-                                done
-                                  ? "line-through"
-                                  : "none",
-
-                              overflowWrap:
-                                "anywhere",
+                              fontSize: 13.5,
+                              fontWeight: 600,
+                              lineHeight: 1.35,
+                              wordBreak: "break-word",
+                              textDecoration: isDone ? "line-through" : "none",
+                              color: isDone ? "var(--k-muted)" : "var(--k-ink)",
                             }}
                           >
                             {task.title}
                           </div>
 
-                          {/* BOARD */}
-
-                          {!boardId &&
-                            task.board_name && (
-                              <div
-                                style={{
-                                  marginTop: 4,
-
-                                  fontSize: 10,
-
-                                  color:
-                                    "#8a8984",
-
-                                  overflowWrap:
-                                    "anywhere",
-                                }}
-                              >
-                                Board:{" "}
-                                {
-                                  task.board_name
-                                }
-                              </div>
-                            )}
-
-                          {/* DESCRIPTION */}
-
-                          {task.description && (
-                            <div
-                              style={{
-                                marginTop: 5,
-
-                                fontSize: 11,
-
-                                color:
-                                  "#77756f",
-
-                                lineHeight:
-                                  1.4,
-
-                                overflowWrap:
-                                  "anywhere",
-                              }}
-                            >
-                              {
-                                task.description
-                              }
-                            </div>
-                          )}
-
-                          {/* BADGES */}
-
                           <div
                             style={{
-                              display:
-                                "flex",
-
-                              gap: 6,
-
-                              marginTop: 9,
-
-                              flexWrap:
-                                "wrap",
+                              display: "flex",
+                              flexWrap: "wrap",
+                              alignItems: "center",
+                              gap: 8,
+                              marginTop: 6,
                             }}
                           >
-                            {/* PRIORITY */}
-
                             <span
                               style={{
-                                padding:
-                                  "3px 7px",
-
-                                borderRadius:
-                                  999,
-
-                                background:
-                                  priority.background,
-
-                                color:
-                                  priority.color,
-
-                                fontSize: 9,
-
-                                fontWeight:
-                                  700,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 6,
+                                fontSize: 11.5,
+                                color: "var(--k-muted)",
                               }}
                             >
-                              {task.priority ===
-                              "tinggi"
-                                ? "Tinggi"
-                                : task.priority ===
-                                  "rendah"
-                                ? "Rendah"
-                                : "Sedang"}
+                              <span
+                                style={{
+                                  width: 8,
+                                  height: 8,
+                                  borderRadius: 2,
+                                  background: color,
+                                }}
+                              />
+                              {task.board_name}
                             </span>
 
-                            {/* STATUS */}
-
                             <span
                               style={{
-                                padding:
-                                  "3px 7px",
-
-                                borderRadius:
-                                  999,
-
-                                background:
-                                  "#f1f1ee",
-
-                                color:
-                                  "#66645f",
-
-                                fontSize: 9,
-
-                                fontWeight:
-                                  600,
+                                fontSize: 10.5,
+                                fontWeight: 700,
+                                padding: "2px 7px",
+                                borderRadius: 5,
+                                ...tone,
                               }}
                             >
-                              {getStatusLabel(
-                                task.status
-                              )}
+                              {PRIORITY_LABEL[task.priority] || "Sedang"}
+                            </span>
+
+                            <span style={{ fontSize: 11, color: "var(--k-faint)" }}>
+                              {getStatusLabel(task.status)}
                             </span>
                           </div>
-
-                          {/* TIME */}
-
-                          {Number(
-                            task.time
-                          ) > 0 && (
-                            <div
-                              style={{
-                                display:
-                                  "flex",
-
-                                alignItems:
-                                  "center",
-
-                                gap: 4,
-
-                                marginTop: 8,
-
-                                color:
-                                  "#77756f",
-
-                                fontSize: 10,
-                              }}
-                            >
-                              <Clock3
-                                size={12}
-                              />
-
-                              {Math.floor(
-                                Number(
-                                  task.time
-                                ) /
-                                  3600
-                              )
-                                .toString()
-                                .padStart(
-                                  2,
-                                  "0"
-                                )}
-
-                              :
-
-                              {Math.floor(
-                                (Number(
-                                  task.time
-                                ) %
-                                  3600) /
-                                  60
-                              )
-                                .toString()
-                                .padStart(
-                                  2,
-                                  "0"
-                                )}
-                            </div>
-                          )}
                         </div>
-                      </div>
-                    </div>
-                  );
-                }
+                      </li>
+                    );
+                  })}
+                </ul>
               )}
-            </div>
-          )}
+            </section>
+
+            <section className="k-panel" style={{ padding: "18px 20px 8px" }}>
+              <h3
+                className="k-display"
+                style={{ margin: "0 0 8px", fontSize: 15, fontWeight: 600 }}
+              >
+                Deadline berikutnya
+              </h3>
+
+              {upcoming.length === 0 ? (
+                <p
+                  style={{
+                    fontSize: 12.5,
+                    color: "var(--k-muted)",
+                    margin: "0 0 12px",
+                  }}
+                >
+                  Tidak ada deadline mendatang.
+                </p>
+              ) : (
+                <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                  {upcoming.map((task) => (
+                    <li key={`${task.board_id}-${task.id}`}>
+                      <button
+                        type="button"
+                        className="k-row-hover"
+                        onClick={() => {
+                          const d = new Date(`${task.due_date}T00:00:00`);
+                          setCurrentDate(new Date(d.getFullYear(), d.getMonth(), 1));
+                          setSelectedDate(task.due_date);
+                        }}
+                        style={{
+                          width: "100%",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                          padding: "9px 4px",
+                          background: "none",
+                          border: "none",
+                          borderTop: "1px solid var(--k-line-soft)",
+                          cursor: "pointer",
+                          textAlign: "left",
+                          fontFamily: "inherit",
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: 3,
+                            alignSelf: "stretch",
+                            borderRadius: 2,
+                            background: boardColor(task.board_id),
+                          }}
+                        />
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <span
+                            style={{
+                              display: "block",
+                              fontSize: 12.5,
+                              fontWeight: 600,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {task.title}
+                          </span>
+                          <span style={{ fontSize: 11, color: "var(--k-muted)" }}>
+                            {new Date(`${task.due_date}T00:00:00`).toLocaleDateString(
+                              "id-ID",
+                              { day: "numeric", month: "short" }
+                            )}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </aside>
         </div>
       </div>
-
-      {/* ====================================================
-          RESPONSIVE
-          ==================================================== */}
-
-      <style>{`
-        /*
-         * Tablet
-         */
-        @media (max-width: 1100px) {
-          .schedule-main {
-            grid-template-columns:
-              minmax(0, 1fr) 280px !important;
-          }
-        }
-
-        /*
-         * Mobile / layar kecil
-         */
-        @media (max-width: 900px) {
-          .schedule-main {
-            grid-template-columns:
-              minmax(0, 1fr) !important;
-          }
-        }
-
-        /*
-         * Mobile kecil
-         */
-        @media (max-width: 600px) {
-          .schedule-main {
-            grid-template-columns:
-              minmax(0, 1fr) !important;
-          }
-        }
-      `}</style>
     </div>
   );
 }

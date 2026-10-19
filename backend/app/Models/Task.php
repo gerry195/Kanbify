@@ -11,11 +11,12 @@ class Task extends Model
 
     protected $fillable = [
         'board_id', 'user_id', 'title', 'description', 'status', 'priority',
-        'color', 'time', 'is_running', 'due_date', 'completed_at',
+        'color', 'time', 'is_running', 'start_date', 'due_date', 'completed_at',
     ];
 
     protected $casts = [
         'is_running'   => 'boolean',
+        'start_date'   => 'date:Y-m-d',
         'due_date'     => 'date:Y-m-d',
         'completed_at' => 'datetime',
     ];

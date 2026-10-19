@@ -16,7 +16,7 @@ import DashboardPage from './pages/DashboardPage';
 import AllBoardsPage from './pages/AllBoardsPage';
 import ProfilePage from './pages/ProfilePage';
 import StatsPage from './pages/StatsPage';
-import SchedulePage from './pages/schedulepage.jsx';
+import SchedulePage from './pages/SchedulePage.jsx';
 import KanbanBoardPage from './App-Kanban';
 import Layout from './components/Layout';
 import loadingBg from './assets/kanbifyloading.jpg';
@@ -86,6 +86,7 @@ function AppContent() {
   } = useAuth();
 
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [statsBoardId, setStatsBoardId] = useState(null);
 
   const [selectedBoardId, setSelectedBoardId] = useState(null);
 
@@ -541,7 +542,14 @@ function AppContent() {
   |--------------------------------------------------------------------------
   */
 
+  const handleOpenStats = (boardId) => {
+    setStatsBoardId(boardId);
+    setCurrentPage('stats');
+  };
+
   const handleNavigate = (page) => {
+    setStatsBoardId(null);
+
     /*
      * Kalau pindah dari board ke halaman lain,
      * board yang sedang dipilih dibersihkan.
@@ -591,7 +599,8 @@ function AppContent() {
       {currentPage === 'dashboard' && (
         <DashboardPage
           onSelectBoard={handleSelectBoard}
-          onNavigate={setCurrentPage}
+          onNavigate={handleNavigate}
+          onOpenStats={handleOpenStats}
         />
       )}
 
@@ -602,6 +611,7 @@ function AppContent() {
       {currentPage === 'allboards' && (
         <AllBoardsPage
           onSelectBoard={handleSelectBoard}
+          onOpenStats={handleOpenStats}
         />
       )}
 
@@ -610,7 +620,10 @@ function AppContent() {
       ====================================================== */}
 
       {currentPage === 'stats' && (
-        <StatsPage />
+        <StatsPage
+          initialBoardId={statsBoardId}
+          onOpenBoard={handleSelectBoard}
+        />
       )}
 
       {/* =====================================================

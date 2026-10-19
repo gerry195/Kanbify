@@ -103,6 +103,13 @@ async getBoard(id) {
   return this.request(`/boards/${id}`);
 }
 
+async updateBoardAppearance(boardId, formData) { return this.request(`/boards/${boardId}/appearance`, { method: 'POST', body: formData }); }
+async getCalendarTasks() { return this.request('/calendar/tasks'); }
+async getBoardFiles(boardId) { return this.request(`/boards/${boardId}/files`); }
+async uploadBoardFile(boardId, formData) { return this.request(`/boards/${boardId}/files`, { method: 'POST', body: formData }); }
+async downloadBoardFile(boardId, fileId) { const response = await fetch(`${API_URL}/boards/${boardId}/files/${fileId}/download`, { headers: this.getHeaders() }); if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.error || 'Gagal mengunduh file'); } return response.blob(); }
+async deleteBoardFile(boardId, fileId) { return this.request(`/boards/${boardId}/files/${fileId}`, { method: 'DELETE' }); }
+
 async deleteBoard(boardId) {
   return this.request(`/boards/${boardId}`, {
     method: 'DELETE'
@@ -153,7 +160,8 @@ async toggleStarBoard(boardId) {
     time = 0,
     is_running = false,
     priority = 'sedang',
-    assignees = []
+    assignees = [],
+    start_date = null
   ) {
     return this.request('/tasks', {
       method: 'POST',
@@ -165,6 +173,7 @@ async toggleStarBoard(boardId) {
         color,
         board_id,
         due_date,
+        start_date,
         time: parseInt(time) || 0,
         is_running: !!is_running,
         assignees
@@ -182,7 +191,8 @@ async toggleStarBoard(boardId) {
     isRunning,
     due_date,
     priority,
-    assignees
+    assignees,
+    start_date
   ) {
     const payload = {
       title,
@@ -192,7 +202,8 @@ async toggleStarBoard(boardId) {
       color,
       time: parseInt(time) || 0,
       isRunning: !!isRunning,
-      due_date
+      due_date,
+      start_date
     };
 
     // Kirim assignees hanya jika memang disediakan.
@@ -208,6 +219,19 @@ async toggleStarBoard(boardId) {
 
   async deleteTask(id) {
     return this.request(`/tasks/${id}`, { method: 'DELETE' });
+  }
+
+  // ── NOTIFICATIONS ─────────────────────────────────────
+  async getNotifications() {
+    return this.request('/notifications');
+  }
+
+  async markNotificationRead(id) {
+    return this.request(`/notifications/${id}/read`, { method: 'PUT' });
+  }
+
+  async markAllNotificationsRead() {
+    return this.request('/notifications/read-all', { method: 'PUT' });
   }
 
   // ── STATS ─────────────────────────────────────────────

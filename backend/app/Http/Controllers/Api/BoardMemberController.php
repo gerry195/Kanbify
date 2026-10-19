@@ -63,9 +63,20 @@ class BoardMemberController extends Controller
         $request->validate(['role' => 'required|in:admin,member']);
 
         $membership = BoardMember::where('board_id', $board->id)->where('user_id', $user->id)->firstOrFail();
-        $membership->update(['role' => $request->role]);
-
-        return response()->json(['success' => true]);
+        $actor = $request->user();
+        $newRole = $request->role;
+        if ((int) $board->owner_id === (int) $user->id && $newRole !== 'admin') {
+            return response()->json(['error' => 'Pemilik board harus tetap menjadi admin.'], 422);
+        }
+        if ((int) $actor->id === (int) $user->id && $newRole !== 'admin') {
+            return response()->json(['error' => 'Kamu tidak dapat mengubah role sendiri menjadi member. Minta admin lain mengubah role kamu.'], 422);
+        }
+        if ($membership->role === 'admin' && $newRole !== 'admin') {
+            $adminCount = BoardMember::where('board_id', $board->id)->where('role', 'admin')->count();
+            if ($adminCount <= 1) return response()->json(['error' => 'Board harus memiliki minimal satu admin.'], 422);
+        }
+        $membership->update(['role' => $newRole]);
+        return response()->json(['success' => true, 'role' => $membership->role]);
     }
 
     public function destroy(Request $request, Board $board, User $user)

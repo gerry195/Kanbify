@@ -1,20 +1,24 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useLayoutEffect, useMemo } from "react";
 
 import whiteboardBg from "./assets/c69c6da2680c47ae26f097b37212ae09.jpg";
 
 import { api } from "./utils/api.js";
+import { Plus } from "lucide-react";
+import BoardGantt from "./components/BoardGantt.jsx";
+import TaskCard from "./components/TaskCard.jsx";
+import { MemberStack, ToolButton, ToolSearch } from "./components/BoardHeaderBits.jsx";
 
 
 
 function getDaysInMonth(year, month) {
 
-  return new Date(year, month + 1, 0).getDate();
+  return new Date(year, month + 1, 0).getDate();
 
 }
 
 function getFirstDayOfMonth(year, month) {
 
-  return new Date(year, month, 1).getDay();
+  return new Date(year, month, 1).getDay();
 
 }
 
@@ -22,9 +26,9 @@ function getFirstDayOfMonth(year, month) {
 
 const MONTH_NAMES = [
 
-  "January","February","March","April","May","June",
+  "January","February","March","April","May","June",
 
-  "July","August","September","October","November","December"
+  "July","August","September","October","November","December"
 
 ];
 
@@ -34,21 +38,21 @@ const DAY_LABELS = ["Su","Mo","Tu","We","Th","Fr","Sa"];
 
 const CARD_COLORS = [
 
-  { label: "Default", bg: null,       border: null       },
+  { label: "Default", bg: null,       border: null       },
 
-  { label: "Red",     bg: "#fff0f0",  border: "#ffb3b3"  },
+  { label: "Red",     bg: "#fff0f0",  border: "#ffb3b3"  },
 
-  { label: "Orange",  bg: "#fff7f0",  border: "#ffc89a"  },
+  { label: "Orange",  bg: "#fff7f0",  border: "#ffc89a"  },
 
-  { label: "Yellow",  bg: "#fffbf0",  border: "#ffe08a"  },
+  { label: "Yellow",  bg: "#fffbf0",  border: "#ffe08a"  },
 
-  { label: "Green",   bg: "#f0fff6",  border: "#9adcb8"  },
+  { label: "Green",   bg: "#f0fff6",  border: "#9adcb8"  },
 
-  { label: "Blue",    bg: "#f0f5ff",  border: "#9ab8ff"  },
+  { label: "Blue",    bg: "#f0f5ff",  border: "#9ab8ff"  },
 
-  { label: "Purple",  bg: "#f8f0ff",  border: "#c9a0ff"  },
+  { label: "Purple",  bg: "#f8f0ff",  border: "#c9a0ff"  },
 
-  { label: "Pink",    bg: "#fff0f8",  border: "#ffabda"  },
+  { label: "Pink",    bg: "#fff0f8",  border: "#ffabda"  },
 
 ];
 
@@ -56,11 +60,11 @@ const CARD_COLORS = [
 
 const FIXED_COLUMNS = [
 
-  { id: "todo",         title: "To Do",       dot: "#3b82f6" },
+  { id: "todo",         title: "To Do",       dot: "#3b82f6" },
 
-  { id: "in-progress",  title: "In Progress", dot: "#f97316" },
+  { id: "in-progress",  title: "In Progress", dot: "#f97316" },
 
-  { id: "done",         title: "Done",        dot: "#16a34a" },
+  { id: "done",         title: "Done",        dot: "#16a34a" },
 
 ];
 
@@ -84,55 +88,55 @@ function priorityStyle(id) {
 
 function AutoGrowTextarea({ value, onChange, onBlur, placeholder }) {
 
-  const ref = useRef(null);
+  const ref = useRef(null);
 
-  useEffect(() => {
+  useEffect(() => {
 
-    if (ref.current) {
+    if (ref.current) {
 
-      ref.current.style.height = "auto";
+      ref.current.style.height = "auto";
 
-      ref.current.style.height = Math.max(60, ref.current.scrollHeight) + "px";
+      ref.current.style.height = Math.max(60, ref.current.scrollHeight) + "px";
 
-    }
+    }
 
-  }, [value]);
+  }, [value]);
 
-  return (
+  return (
 
-    <textarea
+    <textarea
 
-      ref={ref}
+      ref={ref}
 
-      value={value}
+      value={value}
 
-      onChange={onChange}
+      onChange={onChange}
 
-      onBlur={onBlur}
+      onBlur={onBlur}
 
-      onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); e.currentTarget.blur(); } }}
+      onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); e.currentTarget.blur(); } }}
 
-      placeholder={placeholder}
+      placeholder={placeholder}
 
-      style={{
+      style={{
 
-        border: "none", background: "transparent", outline: "none",
+        border: "none", background: "transparent", outline: "none",
 
-        fontSize: 11, color: "var(--text-main)", width: "100%",
+        fontSize: 11, color: "var(--text-main)", width: "100%",
 
-        resize: "none", fontFamily: "inherit", lineHeight: "1.4",
+        resize: "none", fontFamily: "inherit", lineHeight: "1.4",
 
-        wordBreak: "break-word", whiteSpace: "pre-wrap",
+        wordBreak: "break-word", whiteSpace: "pre-wrap",
 
-        overflowWrap: "break-word", wordWrap: "break-word",
+        overflowWrap: "break-word", wordWrap: "break-word",
 
-        minHeight: "60px", height: "auto", overflow: "hidden", display: "block"
+        minHeight: "60px", height: "auto", overflow: "hidden", display: "block"
 
-      }}
+      }}
 
-    />
+    />
 
-  );
+  );
 
 }
 
@@ -142,15 +146,15 @@ function AutoGrowTextarea({ value, onChange, onBlur, placeholder }) {
 
 function toDateKey(value) {
 
-  if (!value) return "";
+  if (!value) return "";
 
-  const raw = String(value);
+  const raw = String(value);
 
-  // Laravel's date:Y-m-d cast normally returns YYYY-MM-DD. If a full
+  // Laravel's date:Y-m-d cast normally returns YYYY-MM-DD. If a full
 
-  // datetime ever arrives, only use its date portion to avoid timezone shifts.
+  // datetime ever arrives, only use its date portion to avoid timezone shifts.
 
-  return raw.length >= 10 ? raw.slice(0, 10) : raw;
+  return raw.length >= 10 ? raw.slice(0, 10) : raw;
 
 }
 
@@ -158,387 +162,293 @@ function toDateKey(value) {
 
 function formatDateLabel(dateKey) {
 
-  if (!dateKey) return "";
+  if (!dateKey) return "";
 
-  const [y, m, d] = dateKey.split("-").map(Number);
+  const [y, m, d] = dateKey.split("-").map(Number);
 
-  if (!y || !m || !d) return dateKey;
+  if (!y || !m || !d) return dateKey;
 
-  return new Date(y, m - 1, d).toLocaleDateString("id-ID", {
+  return new Date(y, m - 1, d).toLocaleDateString("id-ID", {
 
-    day: "numeric",
+    day: "numeric",
 
-    month: "long",
+    month: "long",
 
-    year: "numeric",
+    year: "numeric",
 
-  });
+  });
 
 }
 
 
 
-// ─── MiniCalendar ───────────────────────────────────────────────
-
-function MiniCalendar({ quests = [] }) {
-
-  const today = new Date();
-
-  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-
-  const [cur, setCur] = useState({ year: today.getFullYear(), month: today.getMonth() });
-
-  const [selectedDate, setSelectedDate] = useState(todayKey);
-
-
-
-  const firstDay = getFirstDayOfMonth(cur.year, cur.month);
-
-  const daysInMonth = getDaysInMonth(cur.year, cur.month);
-
-  const prevMonth = () => setCur(c => c.month === 0 ? { year: c.year - 1, month: 11 } : { ...c, month: c.month - 1 });
-
-  const nextMonth = () => setCur(c => c.month === 11 ? { year: c.year + 1, month: 0 } : { ...c, month: c.month + 1 });
-
-
-
-  const tasksByDate = quests.reduce((acc, task) => {
-
-    const key = toDateKey(task.due_date);
-
-    if (!key) return acc;
-
-    if (!acc[key]) acc[key] = [];
-
-    acc[key].push(task);
-
-    return acc;
-
-  }, {});
-
-
-
-  const cells = [];
-
-  for (let i = 0; i < firstDay; i++) cells.push(null);
-
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-
-
-
-  const selectedTasks = tasksByDate[selectedDate] || [];
-
-
-
-  const handleSelectDate = (day) => {
-
-    if (!day) return;
-
-    const key = `${cur.year}-${String(cur.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-
-    setSelectedDate(key);
-
-  };
-
-
-
-  return (
-
-    <div style={{ padding: "0 10px 12px" }}>
-
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
-
-        <button onClick={prevMonth} style={{ background:"none", border:"none", cursor:"pointer", color:"var(--text-muted)", fontSize:16, padding:"2px 6px" }}>‹</button>
-
-        <span style={{ fontSize:12, fontWeight:500, color:"var(--text-main)" }}>{MONTH_NAMES[cur.month]} {cur.year}</span>
-
-        <button onClick={nextMonth} style={{ background:"none", border:"none", cursor:"pointer", color:"var(--text-muted)", fontSize:16, padding:"2px 6px" }}>›</button>
-
-      </div>
-
-
-
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(7, 1fr)", gap:1 }}>
-
-        {DAY_LABELS.map(d => (
-
-          <div key={d} style={{ textAlign:"center", fontSize:10, color:"var(--text-muted)", padding:"2px 0" }}>{d}</div>
-
-        ))}
-
-        {cells.map((day, i) => {
-
-          const key = day
-
-            ? `${cur.year}-${String(cur.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
-
-            : "";
-
-          const hasTasks = Boolean(key && tasksByDate[key]?.length);
-
-          const isToday = key === todayKey;
-
-          const isSelected = key === selectedDate;
-
-
-
-          return (
-
-            <button
-
-              key={i}
-
-              type="button"
-
-              onClick={() => handleSelectDate(day)}
-
-              disabled={!day}
-
-              title={hasTasks ? `${tasksByDate[key].length} tugas` : undefined}
-
-              style={{
-
-                position:"relative", border:"none", background: isSelected ? "#667eea" : "transparent",
-
-                color: isSelected ? "#fff" : day ? "var(--text-main)" : "transparent",
-
-                width:24, height:24, margin:"auto", borderRadius:"50%",
-
-                display:"flex", alignItems:"center", justifyContent:"center",
-
-                fontSize:11, cursor: day ? "pointer" : "default", padding:0,
-
-                fontWeight: isToday || isSelected ? 700 : 400,
-
-                outline: isToday && !isSelected ? "1px solid #667eea" : "none",
-
-                outlineOffset: -1,
-
-              }}
-
-            >
-
-              {day || ""}
-
-              {hasTasks && (
-
-                <span style={{
-
-                  position:"absolute", bottom:2, left:"50%", transform:"translateX(-50%)",
-
-                  width:4, height:4, borderRadius:"50%",
-
-                  background: isSelected ? "#fff" : "#f97316"
-
-                }} />
-
-              )}
-
-            </button>
-
-          );
-
-        })}
-
-      </div>
-
-
-
-      <div style={{ marginTop:10, borderTop:"0.5px solid var(--border)", paddingTop:9 }}>
-
-        <div style={{ fontSize:11, fontWeight:700, color:"var(--text-main)", marginBottom:7 }}>
-
-          {selectedDate ? formatDateLabel(selectedDate) : "Pilih tanggal"}
-
-        </div>
-
-
-
-        {selectedTasks.length === 0 ? (
-
-          <div style={{ fontSize:11, color:"var(--text-muted)", lineHeight:1.45 }}>
-
-            Tidak ada tugas dengan jadwal pada tanggal ini.
-
-          </div>
-
-        ) : (
-
-          selectedTasks.map(task => {
-
-            const priority = priorityStyle(task.priority);
-
-            return (
-
-              <div key={task.id} style={{
-
-                padding:"7px 8px", marginBottom:6, borderRadius:7,
-
-                background: task.color || "var(--bg-timer)",
-
-                border:`0.5px solid ${CARD_COLORS.find(c => c.bg === task.color)?.border || "var(--border)"}`,
-
-              }}>
-
-                <div style={{ fontSize:11.5, fontWeight:600, color:"var(--text-main)", lineHeight:1.35, wordBreak:"break-word" }}>
-
-                  {task.title}
-
-                </div>
-
-                <div style={{ display:"flex", alignItems:"center", gap:5, marginTop:5 }}>
-
-                  <span style={{ fontSize:9, fontWeight:700, padding:"2px 6px", borderRadius:999, background:priority.bg, color:priority.text }}>
-
-                    {priority.label}
-
-                  </span>
-
-                  <span style={{ fontSize:9.5, color:"var(--text-muted)" }}>
-
-                    {task.status === "done" ? "Selesai" : task.status === "in-progress" ? "Sedang dikerjakan" : task.status === "todo" ? "To Do" : "Backlog"}
-
-                  </span>
-
-                </div>
-
-              </div>
-
-            );
-
-          })
-
-        )}
-
-      </div>
-
-    </div>
-
-  );
-
+// ─── Glass tokens (ubah di sini untuk mengatur intensitas glassmorphism) ───
+const GLASS = {
+  panel: {
+    background: "rgba(255,255,255,0.75)",
+    backdropFilter: "blur(20px) saturate(150%)",
+    WebkitBackdropFilter: "blur(20px) saturate(150%)",
+    border: "1px solid rgba(255,255,255,0.65)",
+    boxShadow: "0 10px 40px rgba(15,23,42,0.14), inset 0 1px 0 rgba(255,255,255,0.7)",
+  },
+  card: {
+    background: "rgba(255,255,255,0.55)",
+    backdropFilter: "blur(10px)",
+    WebkitBackdropFilter: "blur(10px)",
+    border: "1px solid rgba(255,255,255,0.7)",
+    boxShadow: "0 2px 10px rgba(15,23,42,0.06)",
+  },
+};
+
+// ─── Deteksi terang/gelap background board ──────────────────────
+// Mengembalikan true jika background dominan gelap → teks jadi putih.
+function lumaOfHex(hex) {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 }
 
+function useBoardIsDark(backgroundCss) {
+  const [dark, setDark] = useState(() => {
+    if (/url\(/.test(backgroundCss)) return false;
+    const hexes = backgroundCss.match(/#[0-9a-f]{6}/gi) || [];
+    if (!hexes.length) return false;
+    return hexes.reduce((s, h) => s + lumaOfHex(h), 0) / hexes.length < 0.5;
+  });
 
+  useEffect(() => {
+    let cancelled = false;
+    const urlMatch = /url\(\s*["']?(.*?)["']?\s*\)/.exec(backgroundCss);
 
-// ─── SideSection ────────────────────────────────────────────────
+    if (!urlMatch) {
+      const hexes = backgroundCss.match(/#[0-9a-f]{6}/gi) || [];
+      if (hexes.length) setDark(hexes.reduce((s, h) => s + lumaOfHex(h), 0) / hexes.length < 0.5);
+      return undefined;
+    }
 
-function SideSection({ title, children, extra }) {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      if (cancelled) return;
+      try {
+        const size = 48;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        ctx.drawImage(img, 0, 0, size, size);
+        const { data } = ctx.getImageData(0, 0, size, size);
+        let total = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          total += (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]) / 255;
+        }
+        setDark(total / (data.length / 4) < 0.5);
+      } catch {
+        // Canvas "tainted" (server belum mengirim header CORS untuk gambar) → anggap terang.
+        setDark(false);
+      }
+    };
+    img.onerror = () => { if (!cancelled) setDark(false); };
+    img.src = urlMatch[1];
+    return () => { cancelled = true; };
+  }, [backgroundCss]);
 
-  const [open, setOpen] = useState(true);
-
-  return (
-
-    <div style={{ borderBottom: "0.5px solid var(--border)" }}>
-
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 14px", cursor:"pointer" }} onClick={() => setOpen(o => !o)}>
-
-        <div style={{ fontSize:13, fontWeight:600, color:"var(--text-main)" }}>{title}</div>
-
-        <div style={{ display:"flex", alignItems:"center", gap:8, color:"var(--text-muted)", fontSize:13 }}>
-
-          {extra}
-
-          <span style={{ transition:"transform .2s", display:"inline-block", transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}>▾</span>
-
-        </div>
-
-      </div>
-
-      {open && children}
-
-    </div>
-
-  );
-
+  return dark;
 }
 
+// ─── BoardTabs (pill + indikator geser) ─────────────────────────
+const BOARD_TABS = [
+  { id: "board",    label: "Board" },
+  { id: "backlog",  label: "Backlog" },
+  { id: "gantt",    label: "Gantt Chart" },
+  { id: "files",    label: "Files" },
+];
 
+function TabIcon({ name }) {
+  const common = { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true };
+  switch (name) {
+    case "board":
+      return <svg {...common}><rect x="3" y="3" width="5" height="14" rx="1.5" /><rect x="10" y="3" width="5" height="18" rx="1.5" /><rect x="17" y="3" width="4" height="10" rx="1.5" /></svg>;
+    case "backlog":
+      return <svg {...common}><rect x="3" y="5" width="6" height="6" rx="1" /><path d="m3 17 2 2 4-4" /><path d="M13 6h8M13 12h8M13 18h8" /></svg>;
+    case "gantt":
+      return <svg {...common}><rect x="3" y="4" width="10" height="4" rx="1.2" /><rect x="8" y="10" width="13" height="4" rx="1.2" /><rect x="5" y="16" width="9" height="4" rx="1.2" /></svg>;
+    default:
+      return <svg {...common}><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" /></svg>;
+  }
+}
+
+function BoardTabs({ active, onChange }) {
+  const trackRef = useRef(null);
+  const btnRefs = useRef({});
+  const [indicator, setIndicator] = useState(null);
+  const [animate, setAnimate] = useState(false);
+
+  const measure = useCallback(() => {
+    const el = btnRefs.current[active];
+    if (!el) return;
+    setIndicator({ left: el.offsetLeft, top: el.offsetTop, width: el.offsetWidth, height: el.offsetHeight });
+  }, [active]);
+
+  useLayoutEffect(() => { measure(); }, [measure]);
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setAnimate(true));
+    let ro;
+    if (typeof ResizeObserver !== "undefined" && trackRef.current) {
+      ro = new ResizeObserver(() => measure());
+      ro.observe(trackRef.current);
+    }
+    if (document.fonts?.ready) document.fonts.ready.then(measure);
+    return () => { cancelAnimationFrame(raf); ro?.disconnect(); };
+  }, [measure]);
+
+  return (
+    <div ref={trackRef} role="tablist" aria-label="Tampilan board" className="kb-tabs-track">
+      <span
+        aria-hidden
+        className="kb-tab-indicator"
+        style={{
+          opacity: indicator ? 1 : 0,
+          transform: indicator ? `translate(${indicator.left}px, ${indicator.top}px)` : "none",
+          width: indicator?.width || 0,
+          height: indicator?.height || 0,
+          transition: animate ? undefined : "none",
+        }}
+      />
+      {BOARD_TABS.map((tab, i) => (
+        <button
+          key={tab.id}
+          ref={el => { btnRefs.current[tab.id] = el; }}
+          type="button"
+          role="tab"
+          aria-selected={active === tab.id}
+          className={`kb-tab${active === tab.id ? " is-active" : ""}`}
+          style={{ animationDelay: `${i * 70}ms` }}
+          onClick={() => onChange(tab.id)}
+        >
+          <TabIcon name={tab.id} />
+          <span>{tab.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ─── Helper tanggal ─────────────────────────────────────────────
+function dateToKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function keyToDate(key) {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function taskRange(task) {
+  const start = toDateKey(task.start_date);
+  const end = toDateKey(task.due_date);
+  if (!start && !end) return null;
+  const s = start || end;
+  const e = end || start;
+  return s <= e ? { start: s, end: e } : { start: e, end: s };
+}
+
+function shortDate(key) {
+  return keyToDate(key).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+}
+
+function statusLabel(status) {
+  return status === "done" ? "Selesai" : status === "in-progress" ? "Sedang dikerjakan" : status === "todo" ? "To Do" : "Backlog";
+}
 
 // ─── ColorPicker ────────────────────────────────────────────────
 
 function ColorPicker({ currentColor, onChange }) {
 
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false);
 
-  const current = CARD_COLORS.find(c => c.bg === currentColor) || CARD_COLORS[0];
+  const current = CARD_COLORS.find(c => c.bg === currentColor) || CARD_COLORS[0];
 
-  return (
+  return (
 
-    <div style={{ position:"relative" }}>
+    <div style={{ position:"relative" }}>
 
-      <div
+      <div
 
-        onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+        onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
 
-        title="Ubah warna kartu"
+        title="Ubah warna kartu"
 
-        style={{
+        style={{
 
-          width:20, height:20, borderRadius:6,
+          width:20, height:20, borderRadius:6,
 
-          background: current.bg || "var(--bg-badge)",
+          background: current.bg || "var(--bg-badge)",
 
-          border: `2px solid ${current.border || "var(--border)"}`,
+          border: `2px solid ${current.border || "var(--border)"}`,
 
-          cursor:"pointer", flexShrink:0,
+          cursor:"pointer", flexShrink:0,
 
-        }}
+        }}
 
-      />
+      />
 
-      {open && (
+      {open && (
 
-        <>
+        <>
 
-          <div onClick={() => setOpen(false)} style={{ position:"fixed", inset:0, zIndex:99 }} />
+          <div onClick={() => setOpen(false)} style={{ position:"fixed", inset:0, zIndex:99 }} />
 
-          <div style={{
+          <div style={{
 
-            position:"absolute", bottom:28, left:0, zIndex:100,
+            position:"absolute", bottom:28, left:0, zIndex:100,
 
-            background:"var(--bg-surface)", border:"0.5px solid var(--border)",
+            background:"var(--bg-surface)", border:"0.5px solid var(--border)",
 
-            borderRadius:8, padding:7, display:"flex", gap:6, flexWrap:"wrap",
+            borderRadius:8, padding:7, display:"flex", gap:6, flexWrap:"wrap",
 
-            width:130, boxShadow:"0 4px 16px rgba(0,0,0,0.12)",
+            width:130, boxShadow:"0 4px 16px rgba(0,0,0,0.12)",
 
-          }}>
+          }}>
 
-            {CARD_COLORS.map(c => (
+            {CARD_COLORS.map(c => (
 
-              <div key={c.label} title={c.label}
+              <div key={c.label} title={c.label}
 
-                onClick={e => { e.stopPropagation(); onChange(c.bg); setOpen(false); }}
+                onClick={e => { e.stopPropagation(); onChange(c.bg); setOpen(false); }}
 
-                style={{
+                style={{
 
-                  width:20, height:20, borderRadius:4, cursor:"pointer",
+                  width:20, height:20, borderRadius:4, cursor:"pointer",
 
-                  background: c.bg || "#e8e8e4",
+                  background: c.bg || "#e8e8e4",
 
-                  border: `2px solid ${c.bg === currentColor ? "#4f46e5" : (c.border || "var(--border)")}`,
+                  border: `2px solid ${c.bg === currentColor ? "#4f46e5" : (c.border || "var(--border)")}`,
 
-                  transition:"transform .1s",
+                  transition:"transform .1s",
 
-                }}
+                }}
 
-                onMouseOver={e => e.currentTarget.style.transform="scale(1.25)"}
+                onMouseOver={e => e.currentTarget.style.transform="scale(1.25)"}
 
-                onMouseOut={e => e.currentTarget.style.transform="scale(1)"}
+                onMouseOut={e => e.currentTarget.style.transform="scale(1)"}
 
-              />
+              />
 
-            ))}
+            ))}
 
-          </div>
+          </div>
 
-        </>
+        </>
 
-      )}
+      )}
 
-    </div>
+    </div>
 
-  );
+  );
 
 }
 
@@ -548,187 +458,187 @@ function ColorPicker({ currentColor, onChange }) {
 
 function MembersModal({ boardId, onClose }) {
 
-  const [members, setMembers] = useState([]);
+  const [members, setMembers] = useState([]);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const [error, setError]     = useState('');
+  const [error, setError]     = useState('');
 
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState('');
 
-  const [newRole, setNewRole]   = useState('member');
+  const [newRole, setNewRole]   = useState('member');
 
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
 
 
-  const load = () => {
+  const load = () => {
 
-    setLoading(true);
+    setLoading(true);
 
-    api.getBoardMembers(boardId)
+    api.getBoardMembers(boardId)
 
-      .then(setMembers)
+      .then(setMembers)
 
-      .catch(err => setError(err.message))
+      .catch(err => setError(err.message))
 
-      .finally(() => setLoading(false));
+      .finally(() => setLoading(false));
 
-  };
+  };
 
 
 
-  useEffect(() => { load(); }, [boardId]);
+  useEffect(() => { load(); }, [boardId]);
 
 
 
-  const handleAdd = async (e) => {
+  const handleAdd = async (e) => {
 
-    e.preventDefault();
+    e.preventDefault();
 
-    if (!username.trim()) return;
+    if (!username.trim()) return;
 
-    setSubmitting(true);
+    setSubmitting(true);
 
-    setError('');
+    setError('');
 
-    try {
+    try {
 
-      await api.addBoardMember(boardId, username.trim(), newRole);
+      await api.addBoardMember(boardId, username.trim(), newRole);
 
-      setUsername('');
+      setUsername('');
 
-      load();
+      load();
 
-    } catch (err) {
+    } catch (err) {
 
-      setError(err.message || 'Gagal menambahkan member');
+      setError(err.message || 'Gagal menambahkan member');
 
-    } finally {
+    } finally {
 
-      setSubmitting(false);
+      setSubmitting(false);
 
-    }
+    }
 
-  };
+  };
 
 
 
-  const handleRoleChange = async (userId, role) => {
+  const handleRoleChange = async (userId, role) => {
 
-    try { await api.updateBoardMemberRole(boardId, userId, role); load(); }
+    try { await api.updateBoardMemberRole(boardId, userId, role); load(); }
 
-    catch (err) { alert(err.message); }
+    catch (err) { alert(err.message); }
 
-  };
+  };
 
 
 
-  const handleRemove = async (userId) => {
+  const handleRemove = async (userId) => {
 
-    if (!window.confirm('Keluarkan member ini dari board?')) return;
+    if (!window.confirm('Keluarkan member ini dari board?')) return;
 
-    try { await api.removeBoardMember(boardId, userId); load(); }
+    try { await api.removeBoardMember(boardId, userId); load(); }
 
-    catch (err) { alert(err.message); }
+    catch (err) { alert(err.message); }
 
-  };
+  };
 
 
 
-  return (
+  return (
 
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000 }} onClick={onClose}>
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.4)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000 }} onClick={onClose}>
 
-      <div onClick={e => e.stopPropagation()} style={{ background:"#fff", borderRadius:16, padding:24, width:420, maxWidth:"90%", fontFamily:"system-ui, sans-serif" }}>
+      <div onClick={e => e.stopPropagation()} style={{ background:"#fff", borderRadius:16, padding:24, width:420, maxWidth:"90%", fontFamily:"system-ui, sans-serif" }}>
 
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
 
-          <h3 style={{ margin:0, fontSize:16, fontWeight:700, color:"#1e293b" }}>Board Members</h3>
+          <h3 style={{ margin:0, fontSize:16, fontWeight:700, color:"#1e293b" }}>Board Members</h3>
 
-          <span onClick={onClose} style={{ cursor:"pointer", color:"#94a3b8" }}>✕</span>
+          <span onClick={onClose} style={{ cursor:"pointer", color:"#94a3b8" }}>✕</span>
 
-        </div>
+        </div>
 
 
 
-        <form onSubmit={handleAdd} style={{ display:"flex", gap:8, marginBottom:16 }}>
+        <form onSubmit={handleAdd} style={{ display:"flex", gap:8, marginBottom:16 }}>
 
-          <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Username"
+          <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Username"
 
-            style={{ flex:1, padding:"8px 10px", borderRadius:8, border:"1px solid #cbd5e1", fontSize:13 }} />
+            style={{ flex:1, padding:"8px 10px", borderRadius:8, border:"1px solid #cbd5e1", fontSize:13 }} />
 
-          <select value={newRole} onChange={e => setNewRole(e.target.value)}
+          <select value={newRole} onChange={e => setNewRole(e.target.value)}
 
-            style={{ padding:"8px 10px", borderRadius:8, border:"1px solid #cbd5e1", fontSize:13 }}>
+            style={{ padding:"8px 10px", borderRadius:8, border:"1px solid #cbd5e1", fontSize:13 }}>
 
-            <option value="member">Member</option>
+            <option value="member">Member</option>
 
-            <option value="admin">Admin</option>
+            <option value="admin">Admin</option>
 
-          </select>
+          </select>
 
-          <button type="submit" disabled={submitting} style={{
+          <button type="submit" disabled={submitting} style={{
 
-            padding:"8px 14px", borderRadius:8, border:"none", background:"#7a8560",
+            padding:"8px 14px", borderRadius:8, border:"none", background:"#7a8560",
 
-            color:"#fff", fontWeight:600, fontSize:13, cursor:"pointer"
+            color:"#fff", fontWeight:600, fontSize:13, cursor:"pointer"
 
-          }}>{submitting ? '...' : 'Add'}</button>
+          }}>{submitting ? '...' : 'Add'}</button>
 
-        </form>
+        </form>
 
 
 
-        {error && <div style={{ color:"#b91c1c", fontSize:12, marginBottom:10 }}>⚠️ {error}</div>}
+        {error && <div style={{ color:"#b91c1c", fontSize:12, marginBottom:10 }}>⚠️ {error}</div>}
 
 
 
-        {loading ? (
+        {loading ? (
 
-          <div style={{ fontSize:13, color:"#64748b" }}>Memuat...</div>
+          <div style={{ fontSize:13, color:"#64748b" }}>Memuat...</div>
 
-        ) : (
+        ) : (
 
-          <div style={{ maxHeight:280, overflowY:"auto" }}>
+          <div style={{ maxHeight:280, overflowY:"auto" }}>
 
-            {members.map(m => (
+            {members.map(m => (
 
-              <div key={m.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 0", borderBottom:"1px solid #f1f5f9" }}>
+              <div key={m.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 0", borderBottom:"1px solid #f1f5f9" }}>
 
-                <div style={{ flex:1 }}>
+                <div style={{ flex:1 }}>
 
-                  <div style={{ fontSize:13, fontWeight:600, color:"#1e293b" }}>{m.fullname || m.username}</div>
+                  <div style={{ fontSize:13, fontWeight:600, color:"#1e293b" }}>{m.fullname || m.username}</div>
 
-                  <div style={{ fontSize:11, color:"#94a3b8" }}>@{m.username}</div>
+                  <div style={{ fontSize:11, color:"#94a3b8" }}>@{m.username}</div>
 
-                </div>
+                </div>
 
-                <select value={m.role} onChange={e => handleRoleChange(m.id, e.target.value)}
+                <select value={m.role} onChange={e => handleRoleChange(m.id, e.target.value)}
 
-                  style={{ fontSize:12, padding:"4px 6px", borderRadius:6, border:"1px solid #cbd5e1" }}>
+                  style={{ fontSize:12, padding:"4px 6px", borderRadius:6, border:"1px solid #cbd5e1" }}>
 
-                  <option value="member">Member</option>
+                  <option value="member">Member</option>
 
-                  <option value="admin">Admin</option>
+                  <option value="admin">Admin</option>
 
-                </select>
+                </select>
 
-                <span onClick={() => handleRemove(m.id)} style={{ cursor:"pointer", color:"#94a3b8", fontSize:12 }}>🗑️</span>
+                <span onClick={() => handleRemove(m.id)} style={{ cursor:"pointer", color:"#94a3b8", fontSize:12 }}>🗑️</span>
 
-              </div>
+              </div>
 
-            ))}
+            ))}
 
-          </div>
+          </div>
 
-        )}
+        )}
 
-      </div>
+      </div>
 
-    </div>
+    </div>
 
-  );
+  );
 
 }
 
@@ -742,40 +652,122 @@ function MembersModal({ boardId, onClose }) {
 
 export default function App({ boardId, boardName, role = 'member', onBackToDashboard }) {
 
-  const isAdmin = role === 'admin';
+  const isAdmin = role === 'admin';
+  const [showAppearance, setShowAppearance] = useState(false);
+  const [boardAppearance, setBoardAppearance] = useState({ background: 'whiteboard', background_image: null });
+  const [appearanceFile, setAppearanceFile] = useState(null);
+  const [appearanceSaving, setAppearanceSaving] = useState(false);
+  useEffect(() => {
+    if (!boardId) return;
+    api.getBoard(boardId).then(data => setBoardAppearance({ background: data.background || 'whiteboard', background_image: data.background_image || null })).catch(err => console.error('Gagal memuat tampilan board:', err));
+  }, [boardId]);
+  const saveBoardAppearance = async () => {
+    setAppearanceSaving(true);
+    try {
+      const form = new FormData(); form.append('background', boardAppearance.background);
+      if (appearanceFile) form.append('background_image', appearanceFile);
+      await api.updateBoardAppearance(boardId, form);
+      const fresh = await api.getBoard(boardId);
+      setBoardAppearance({ background: fresh.background || 'whiteboard', background_image: fresh.background_image || null });
+      setAppearanceFile(null); setShowAppearance(false);
+    } catch (err) { alert(err.message || 'Gagal menyimpan background board'); }
+    finally { setAppearanceSaving(false); }
+  };
+  const boardBackgroundStyle = boardAppearance.background_image
+    ? `url(${(import.meta.env.VITE_API_URL || 'http://localhost:8000/api').replace(/\/api\/?$/, '')}/storage/${boardAppearance.background_image})`
+    : boardAppearance.background === 'green' ? 'linear-gradient(135deg, #174b38, #23634a)'
+    : boardAppearance.background === 'blue' ? 'linear-gradient(135deg, #dbeafe, #eff6ff)'
+    : boardAppearance.background === 'cream' ? 'linear-gradient(135deg, #f5ead5, #fffaf0)'
+    : boardAppearance.background === 'dark' ? 'linear-gradient(135deg, #202124, #34363a)'
+    : `url(${whiteboardBg})`;
+  // Warna teks yang tampil langsung di atas background board (judul kolom dll.)
+  const boardIsDark = useBoardIsDark(boardBackgroundStyle);
+  const boardInk = boardIsDark ? "#ffffff" : "#0f172a";
+  const boardInkSoft = boardIsDark ? "rgba(255,255,255,0.75)" : "rgba(15,23,42,0.55)";
+  const boardInkTransition = "color .35s ease, background .35s ease, border-color .35s ease";
 
-  const [quests, setQuests]           = useState([]);
+  const [quests, setQuests]           = useState([]);
+  const [activeView, setActiveView] = useState("board");
+  const [boardFiles, setBoardFiles] = useState([]);
+  const [filesLoading, setFilesLoading] = useState(false);
+  const [fileUploading, setFileUploading] = useState(false);
+  const [fileError, setFileError] = useState("");
 
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  const [dragOver, setDragOver]       = useState(null);
+  const [dragOver, setDragOver]       = useState(null);
 
-  const [loading, setLoading]         = useState(true);
+  const [loading, setLoading]         = useState(true);
 
-  const [showMembers, setShowMembers] = useState(false);
+  const [showMembers, setShowMembers] = useState(false);
 
-  const [search, setSearch]           = useState("");
+  const [search, setSearch]           = useState("");
 
-  const [priorityFilter, setPriorityFilter] = useState("semua");
+  const [priorityFilter, setPriorityFilter] = useState("semua");
 
-  const [addModal, setAddModal]       = useState(null); // { status } | null
+  const [addModal, setAddModal]       = useState(null); // { status } | null
 
-  const [newTitle, setNewTitle]       = useState("");
+  const [newTitle, setNewTitle]       = useState("");
 
-  const [newPriority, setNewPriority] = useState("sedang");
+  const [newPriority, setNewPriority] = useState("sedang");
 
-  const [newDueDate, setNewDueDate]   = useState("");
+  const [newDueDate, setNewDueDate]   = useState("");
+  const [newStartDate, setNewStartDate] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newStatus, setNewStatus] = useState("todo");
   const [boardMembers, setBoardMembers] = useState([]);
   const [membersLoading, setMembersLoading] = useState(false);
   const [selectedAssignees, setSelectedAssignees] = useState([]);
   const [savingTask, setSavingTask] = useState(false);
   const [priorityMenuOpen, setPriorityMenuOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [taskMenuOpenId, setTaskMenuOpenId] = useState(null);
+  const [taskModalTab, setTaskModalTab] = useState("detail");
+  const [taskEditForm, setTaskEditForm] = useState(null);
+  const [savingTaskEdit, setSavingTaskEdit] = useState(false);
 
 
+
+  useEffect(() => {
+    if (!boardId || activeView !== "files") return;
+    let active = true;
+    setFilesLoading(true); setFileError("");
+    api.getBoardFiles(boardId)
+      .then(data => { if (active) setBoardFiles(Array.isArray(data) ? data : (data?.files || [])); })
+      .catch(err => { if (active) setFileError(err.message || "Gagal memuat file board."); })
+      .finally(() => { if (active) setFilesLoading(false); });
+    return () => { active = false; };
+  }, [boardId, activeView]);
+
+  const uploadBoardFile = async (file) => {
+    if (!file || !boardId) return;
+    setFileUploading(true); setFileError("");
+    try {
+      const form = new FormData(); form.append("file", file);
+      const result = await api.uploadBoardFile(boardId, form);
+      const newFile = result?.file || result;
+      if (newFile?.id) setBoardFiles(prev => [newFile, ...prev.filter(item => String(item.id) !== String(newFile.id))]);
+      else setBoardFiles(await api.getBoardFiles(boardId).then(data => Array.isArray(data) ? data : (data?.files || [])));
+    } catch (err) { setFileError(err.message || "Gagal mengunggah file."); }
+    finally { setFileUploading(false); }
+  };
+
+  const downloadBoardFile = async (file) => {
+    try {
+      const blob = await api.downloadBoardFile(boardId, file.id);
+      const url = URL.createObjectURL(blob); const link = document.createElement("a");
+      link.href = url; link.download = file.original_name || file.name || "board-file"; link.click(); URL.revokeObjectURL(url);
+    } catch (err) { setFileError(err.message || "Gagal mengunduh file."); }
+  };
+
+  const removeBoardFile = async (file) => {
+    if (!window.confirm(`Hapus file ${file.original_name || file.name || "ini"}?`)) return;
+    try { await api.deleteBoardFile(boardId, file.id); setBoardFiles(prev => prev.filter(item => String(item.id) !== String(file.id))); }
+    catch (err) { setFileError(err.message || "Gagal menghapus file."); }
+  };
 
   // Load board members for the multi-select assignee field.
   useEffect(() => {
-    if (!addModal || !boardId) return;
+    if (!boardId) return;
     let active = true;
     setMembersLoading(true);
     api.getBoardMembers(boardId)
@@ -788,177 +780,261 @@ export default function App({ boardId, boardName, role = 'member', onBackToDashb
       })
       .finally(() => { if (active) setMembersLoading(false); });
     return () => { active = false; };
-  }, [addModal, boardId]);
+  }, [boardId, showMembers]);
 
   // ── Fetch tasks ──
 
-  useEffect(() => {
+  useEffect(() => {
 
-    if (!boardId) return;
+    if (!boardId) return;
 
-    setLoading(true);
+    setLoading(true);
 
-    api.getTasks(boardId)
+    api.getTasks(boardId)
 
-      .then(data => {
+      .then(data => {
 
-        const normalised = data.map(t => ({
+        const normalised = data.map(t => ({
 
-          ...t,
+          ...t,
 
-          note:      t.description ?? t.note ?? "",
+          note:      t.description ?? t.note ?? "",
 
-          time:      Number(t.time) || 0,
+          time:      Number(t.time) || 0,
 
-          isRunning: Boolean(t.is_running || t.isRunning),
+          isRunning: Boolean(t.is_running || t.isRunning),
 
-          color:     t.color ?? null,
+          color:     t.color ?? null,
 
-          priority:  t.priority ?? "sedang",
+          priority:  t.priority ?? "sedang",
 
-          due_date:  toDateKey(t.due_date),
+          due_date:  toDateKey(t.due_date),
 
-        }));
+          start_date: toDateKey(t.start_date),
 
-        setQuests(normalised);
+        }));
 
-      })
+        setQuests(normalised);
 
-      .catch(err => console.error("Gagal ambil tasks:", err))
+      })
 
-      .finally(() => setLoading(false));
+      .catch(err => console.error("Gagal ambil tasks:", err))
 
-  }, [boardId]);
+      .finally(() => setLoading(false));
 
+  }, [boardId]);
 
 
-  // ── Timer tick ──
 
-  useEffect(() => {
+  // ── Timer tick ──
 
-    const iv = setInterval(() => {
+  useEffect(() => {
 
-      setQuests(prev => prev.map(q => q.isRunning ? { ...q, time: q.time + 1 } : q));
+    const iv = setInterval(() => {
 
-    }, 1000);
+      setQuests(prev => prev.map(q => q.isRunning ? { ...q, time: q.time + 1 } : q));
 
-    return () => clearInterval(iv);
+    }, 1000);
 
-  }, []);
+    return () => clearInterval(iv);
 
+  }, []);
 
 
-  // ── Sync task ke backend ──
 
-  const syncTask = useCallback(async (quest) => {
+  // ── Sync task ke backend ──
 
-    try {
+  const syncTask = useCallback(async (quest) => {
 
-      await api.updateTask(
+    try {
 
-        quest.id, quest.title, quest.note ?? "",
+      await api.updateTask(
 
-        quest.status, quest.color, quest.time,
+        quest.id, quest.title, quest.note ?? "",
 
-        quest.isRunning, quest.due_date ?? null, quest.priority ?? "sedang"
+        quest.status, quest.color, quest.time,
 
-      );
+        quest.isRunning, quest.due_date ?? null, quest.priority ?? "sedang"
 
-    } catch (err) { console.error("Gagal sync task:", err); }
+      );
 
-  }, []);
+    } catch (err) { console.error("Gagal sync task:", err); }
 
+  }, []);
 
 
-  const toggleTimer = (id) => {
 
-    setQuests(prev => prev.map(q => {
+  const toggleTimer = (id) => {
 
-      if (q.id !== id) return q;
+    setQuests(prev => prev.map(q => {
 
-      const updated = { ...q, isRunning: !q.isRunning };
+      if (q.id !== id) return q;
 
-      syncTask(updated);
+      const updated = { ...q, isRunning: !q.isRunning };
 
-      return updated;
+      syncTask(updated);
 
-    }));
+      return updated;
 
-  };
+    }));
 
+  };
 
 
-  const setQuestColor = (id, color) => {
 
-    setQuests(prev => prev.map(q => {
+  const setQuestColor = (id, color) => {
 
-      if (q.id !== id) return q;
+    setQuests(prev => prev.map(q => {
 
-      const updated = { ...q, color };
+      if (q.id !== id) return q;
 
-      syncTask(updated);
+      const updated = { ...q, color };
 
-      return updated;
+      syncTask(updated);
 
-    }));
+      return updated;
 
-  };
+    }));
 
+  };
 
 
-  const setQuestNote = (id, text) => {
 
-    const words = text.split(/\s+/).filter(Boolean);
+  const setQuestNote = (id, text) => {
 
-    let finalText = text;
+    const words = text.split(/\s+/).filter(Boolean);
 
-    if (words.length > 15) {
+    let finalText = text;
 
-      let count = 0, cutIndex = 0;
+    if (words.length > 15) {
 
-      for (let i = 0; i < text.length; i++) {
+      let count = 0, cutIndex = 0;
 
-        const prevChar = i === 0 ? " " : text[i-1];
+      for (let i = 0; i < text.length; i++) {
 
-        if ((prevChar === " " || prevChar === "\n") && text[i] !== " " && text[i] !== "\n") count++;
+        const prevChar = i === 0 ? " " : text[i-1];
+
+        if ((prevChar === " " || prevChar === "\n") && text[i] !== " " && text[i] !== "\n") count++;
 
-        if (count > 15) { cutIndex = i; break; }
+        if (count > 15) { cutIndex = i; break; }
 
-      }
+      }
 
-      finalText = text.substring(0, cutIndex).trimEnd();
+      finalText = text.substring(0, cutIndex).trimEnd();
 
-    }
+    }
 
-    setQuests(prev => prev.map(q => q.id === id ? { ...q, note: finalText } : q));
+    setQuests(prev => prev.map(q => q.id === id ? { ...q, note: finalText } : q));
 
-  };
+  };
 
 
 
-  const syncNoteOnBlur = (quest) => syncTask({ ...quest });
+  const syncNoteOnBlur = (quest) => syncTask({ ...quest });
 
 
 
-const openAddModal = (colId = "todo") => {
+const openTaskDetails = (quest) => {
+    setSelectedTaskId(quest.id);
+    setTaskModalTab("detail");
+    setTaskMenuOpenId(null);
+    setTaskEditForm({
+      title: quest.title || "",
+      description: quest.note ?? quest.description ?? "",
+      status: quest.status || "todo",
+      priority: quest.priority || "sedang",
+      due_date: toDateKey(quest.due_date),
+      start_date: toDateKey(quest.start_date),
+      assignees: (Array.isArray(quest.assignees) ? quest.assignees : []).map(a => Number(a.id ?? a.user_id)).filter(Number.isFinite),
+    });
+  };
 
-  if (!boardId) {
+  const beginEditTask = (quest) => {
+    setTaskEditForm({
+      title: quest.title || "",
+      description: quest.note ?? quest.description ?? "",
+      status: quest.status || "todo",
+      priority: quest.priority || "sedang",
+      due_date: toDateKey(quest.due_date),
+      start_date: toDateKey(quest.start_date),
+      assignees: (Array.isArray(quest.assignees) ? quest.assignees : []).map(a => Number(a.id ?? a.user_id)).filter(Number.isFinite),
+    });
+    setTaskModalTab("edit");
+    setTaskMenuOpenId(null);
+  };
 
-    alert("Board belum dimuat. Coba refresh.");
+  const saveTaskEdit = async (e) => {
+    e.preventDefault();
+    const currentTask = quests.find(q => String(q.id) === String(selectedTaskId));
+    if (!currentTask || !taskEditForm || savingTaskEdit) return;
+    if (!taskEditForm.title.trim()) {
+      alert("Nama task wajib diisi.");
+      return;
+    }
 
-    return;
+    setSavingTaskEdit(true);
+    try {
+      const response = await api.updateTask(
+        currentTask.id,
+        taskEditForm.title.trim(),
+        taskEditForm.description || "",
+        taskEditForm.status,
+        currentTask.color ?? null,
+        currentTask.time ?? 0,
+        taskEditForm.status === "in-progress" ? Boolean(currentTask.isRunning) : false,
+        taskEditForm.due_date || null,
+        taskEditForm.priority,
+        taskEditForm.assignees,
+        taskEditForm.start_date || null
+      );
 
-  }
+      const saved = response?.task || response;
+      const updated = {
+        ...currentTask,
+        ...(saved && typeof saved === "object" ? saved : {}),
+        title: taskEditForm.title.trim(),
+        note: taskEditForm.description || "",
+        description: taskEditForm.description || "",
+        status: taskEditForm.status,
+        priority: taskEditForm.priority,
+        due_date: toDateKey(taskEditForm.due_date),
+        start_date: toDateKey(taskEditForm.start_date),
+        isRunning: taskEditForm.status === "in-progress" ? Boolean(currentTask.isRunning) : false,
+        assignees: Array.isArray(saved?.assignees) ? saved.assignees : taskEditForm.assignees.map(id => {
+          const member = boardMembers.find(m => Number(m.id ?? m.user_id) === Number(id));
+          return member ? { ...member, id: Number(member.id ?? member.user_id) } : { id: Number(id) };
+        }),
+      };
+      setQuests(prev => prev.map(q => String(q.id) === String(currentTask.id) ? updated : q));
+      setTaskModalTab("detail");
+    } catch (err) {
+      console.error("Gagal memperbarui task:", err);
+      alert(err.message || "Gagal menyimpan perubahan task.");
+    } finally {
+      setSavingTaskEdit(false);
+    }
+  };
 
+  const openAddModal = (colId = "todo") => {
 
+  if (!boardId) {
 
-  setNewTitle("");
+    alert("Board belum dimuat. Coba refresh.");
 
-  setNewPriority("sedang");
+    return;
 
-  setNewDueDate("");
+  }
 
-  setSelectedAssignees([]);
+
+
+  setNewTitle("");
+  setNewDescription("");
+  setNewStatus(colId || "todo");
+  setNewPriority("sedang");
+  setNewStartDate("");
+  setNewDueDate("");
+
+  setSelectedAssignees([]);
   setPriorityMenuOpen(false);
   setAddModal({ status: colId });
 
@@ -966,18 +1042,22 @@ const openAddModal = (colId = "todo") => {
 
 
 
-  const submitNewTask = async (e) => {
+  const submitNewTask = async (e) => {
     e.preventDefault();
     if (!newTitle.trim() || !addModal || savingTask) return;
 
-    const colId = addModal.status;
+    const colId = newStatus || addModal.status;
+    if (newStartDate && newDueDate && newDueDate < newStartDate) {
+      alert("Deadline tidak boleh lebih awal daripada tanggal mulai.");
+      return;
+    }
     const shouldRun = colId === "in-progress";
     setSavingTask(true);
 
     try {
       const res = await api.createTask(
-        newTitle.trim(), "", colId, null, boardId,
-        newDueDate || null, 0, shouldRun, newPriority, selectedAssignees
+        newTitle.trim(), newDescription.trim(), colId, null, boardId,
+        newDueDate || null, 0, shouldRun, newPriority, selectedAssignees, newStartDate || null
       );
 
       const normalise = (t) => ({
@@ -986,7 +1066,9 @@ const openAddModal = (colId = "todo") => {
         status: t.status ?? colId,
         priority: t.priority ?? newPriority,
         due_date: toDateKey(t.due_date ?? newDueDate),
-        note: t.description ?? t.note ?? "",
+        start_date: toDateKey(t.start_date ?? newStartDate),
+        note: t.description ?? t.note ?? newDescription.trim(),
+        description: t.description ?? t.note ?? newDescription.trim(),
         time: Number(t.time) || 0,
         isRunning: Boolean(t.is_running ?? shouldRun),
         color: t.color ?? null,
@@ -1020,384 +1102,381 @@ const openAddModal = (colId = "todo") => {
 
   const deleteQuest = async (id) => {
 
-    if (!window.confirm("Hapus tugas ini?")) return;
+    if (!window.confirm("Hapus tugas ini?")) return;
 
-    try {
+    try {
 
-      await api.deleteTask(id);
+      await api.deleteTask(id);
 
-      setQuests(prev => prev.filter(q => q.id !== id));
+      setQuests(prev => prev.filter(q => String(q.id) !== String(id)));
+      if (String(selectedTaskId) === String(id)) setSelectedTaskId(null);
+      if (String(taskMenuOpenId) === String(id)) setTaskMenuOpenId(null);
 
-    } catch (err) {
+    } catch (err) {
 
-      console.error("Gagal hapus task:", err);
+      console.error("Gagal hapus task:", err);
 
-      alert("Gagal menghapus tugas.");
+      alert("Gagal menghapus tugas.");
 
-    }
+    }
 
-  };
+  };
 
 
 
-  // ── Drag & Drop ──
+  // ── Drag & Drop ──
 
-  const handleDragStart = (e, id) => {
+  const handleDragStart = (e, id) => {
 
-    e.dataTransfer.setData("text/plain", String(id));
+    e.dataTransfer.setData("text/plain", String(id));
 
-    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.effectAllowed = "move";
 
-  };
+  };
 
 
 
-  const handleDragOver = (e, colId) => {
+  const handleDragOver = (e, colId) => {
 
-    e.preventDefault(); e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
 
-    e.dataTransfer.dropEffect = "move";
+    e.dataTransfer.dropEffect = "move";
 
-    setDragOver(colId);
+    setDragOver(colId);
 
-  };
+  };
 
 
 
-  const handleDragLeave = (e) => {
+  const handleDragLeave = (e) => {
 
-    const rect = e.currentTarget.getBoundingClientRect();
+    const rect = e.currentTarget.getBoundingClientRect();
 
-    if (e.clientX < rect.left || e.clientX >= rect.right ||
+    if (e.clientX < rect.left || e.clientX >= rect.right ||
 
-        e.clientY < rect.top  || e.clientY >= rect.bottom) setDragOver(null);
+        e.clientY < rect.top  || e.clientY >= rect.bottom) setDragOver(null);
 
-  };
+  };
 
 
 
-  const handleDrop = (e, targetStatus) => {
+  const handleDrop = (e, targetStatus) => {
 
-    e.preventDefault(); e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
 
-    setDragOver(null);
+    setDragOver(null);
 
-    const id = e.dataTransfer.getData("text/plain");
+    const id = e.dataTransfer.getData("text/plain");
 
-    if (!id) return;
+    if (!id) return;
 
-    setQuests(prev => prev.map(q => {
+    setQuests(prev => prev.map(q => {
 
-      if (String(q.id) !== String(id)) return q;
+      if (String(q.id) !== String(id)) return q;
 
-      const updated = { ...q, status: targetStatus, isRunning: targetStatus === "in-progress" };
+      const updated = { ...q, status: targetStatus, isRunning: targetStatus === "in-progress" };
 
-      syncTask(updated);
+      syncTask(updated);
 
-      return updated;
+      return updated;
 
-    }));
+    }));
 
-  };
+  };
 
 
 
-  const formatTime = (s) => {
+  const formatTime = (s) => {
 
-    s = Number(s) || 0;
+    s = Number(s) || 0;
 
-    const h   = Math.floor(s / 3600).toString().padStart(2,"0");
+    const h   = Math.floor(s / 3600).toString().padStart(2,"0");
 
-    const m   = Math.floor((s % 3600) / 60).toString().padStart(2,"0");
+    const m   = Math.floor((s % 3600) / 60).toString().padStart(2,"0");
 
-    const sec = (s % 60).toString().padStart(2,"0");
+    const sec = (s % 60).toString().padStart(2,"0");
 
-    return `${h}:${m}:${sec}`;
+    return `${h}:${m}:${sec}`;
 
-  };
+  };
 
 
 
-  const filteredQuests = (colId) => {
+  const ganttQuests = quests.filter(t => {
+    if (search.trim() && !t.title.toLowerCase().includes(search.trim().toLowerCase())) return false;
+    if (priorityFilter !== "semua" && (t.priority || "sedang") !== priorityFilter) return false;
+    return true;
+  });
 
-    let base = colId === "todo"
+  const filteredQuests = (colId) => {
 
-      ? quests.filter(q => q.status === "todo" || q.status === "backlog")
+    let base = quests.filter(q => q.status === colId);
 
-      : quests.filter(q => q.status === colId);
+    if (search.trim()) {
 
-    if (search.trim()) {
+      const q = search.trim().toLowerCase();
 
-      const q = search.trim().toLowerCase();
+      base = base.filter(t => t.title.toLowerCase().includes(q));
 
-      base = base.filter(t => t.title.toLowerCase().includes(q));
+    }
 
-    }
+    if (priorityFilter !== "semua") {
 
-    if (priorityFilter !== "semua") {
+      base = base.filter(t => (t.priority || "sedang") === priorityFilter);
 
-      base = base.filter(t => (t.priority || "sedang") === priorityFilter);
+    }
 
-    }
+    return base;
 
-    return base;
+  };
 
-  };
 
 
+  return (
 
-  return (
+    <div style={{
 
-    <div style={{
+      display:"flex", flexDirection:"column", height:"100vh",
 
-      display:"flex", flexDirection:"column", height:"100vh",
-
-      fontFamily:"system-ui, sans-serif", fontSize:13,
-
-      backgroundImage:`url(${whiteboardBg})`,
-
-      backgroundSize:"cover", backgroundPosition:"center",
-
-      color:"var(--text-main)", position:"relative"
-
-    }}>
-
-
-
-      {/* ── Topbar: nama board kiri, tombol Dashboard kanan ── */}
-
-      <div style={{
-
-        display:"flex", alignItems:"center", justifyContent:"space-between",
-
-        padding:"10px 16px",
-
-        background:"rgba(255,255,255,0.92)",
-
-        borderBottom:"0.5px solid var(--border)",
-
-        flexShrink:0, backdropFilter:"blur(10px)",
-
-        boxShadow:"0 1px 4px rgba(0,0,0,0.06)"
-
-      }}>
-
-        {/* Nama board */}
-
-        <span style={{ display:"flex", alignItems:"center", gap:8 }}>
-
-          <span style={{
-
-            fontSize:14, fontWeight:600, color:"var(--text-main)",
-
-            letterSpacing:"-0.2px"
-
-          }}>
-
-            {boardName || "Board"}
-
-          </span>
-
-          <span style={{
-
-            fontSize:10, fontWeight:700, padding:"3px 8px", borderRadius:999,
-
-            color: isAdmin ? "#166534" : "#1e40af",
-
-            background: isAdmin ? "rgba(220,252,231,0.9)" : "rgba(219,234,254,0.9)",
-
-            textTransform:"uppercase", letterSpacing:"0.5px"
-
-          }}>{isAdmin ? "Admin" : "Member"}</span>
-
-        </span>
-
-
-
-        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-
-          {isAdmin && (
-
-            <button onClick={() => setShowMembers(true)} style={{
-
-              background:"none", border:"1px solid var(--border)",
-
-              cursor:"pointer", color:"var(--text-muted)",
-
-              fontSize:12, fontWeight:500,
-
-              padding:"5px 14px", borderRadius:6,
-
-            }}>
-
-              👥 Members
-
-            </button>
-
-          )}
-
-          <button
-
-            type="button"
-
-            onClick={() => openAddModal("todo")}
-
-            style={{
-
-              background: "#f97316",
-
-              border: "none",
-
-              color: "#fff",
-
-              cursor: "pointer",
-
-              fontSize: 12,
-
-              fontWeight: 600,
-
-              padding: "7px 16px",
-
-              borderRadius: 8,
-
-            }}
-
-          >
-
-            + Tambah Tugas Baru
-
-          </button>
-
-          {/* Tombol Dashboard */}
-
-          {onBackToDashboard && (
-
-            <button onClick={onBackToDashboard} style={{
-
-              background:"none", border:"1px solid var(--border)",
-
-              cursor:"pointer", color:"var(--text-muted)",
-
-              fontSize:12, fontWeight:500,
-
-              padding:"5px 14px", borderRadius:6,
-
-              display:"flex", alignItems:"center", gap:4,
-
-              transition:"all .15s"
-
-            }}
-
-              onMouseOver={e => { e.currentTarget.style.background="var(--bg-column)"; e.currentTarget.style.color="var(--text-main)"; }}
-
-              onMouseOut={e => { e.currentTarget.style.background="none"; e.currentTarget.style.color="var(--text-muted)"; }}
-
-            >
-
-              Dashboard
-
-            </button>
-
-          )}
-
-        </div>
-
-      </div>
-
-
-
-      {/* ── Search + filter bar ── */}
-
-      <div style={{
-
-        display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12,
-
-        padding:"10px 16px", background:"rgba(255,255,255,0.8)",
-
-        borderBottom:"0.5px solid var(--border)", flexShrink:0, backdropFilter:"blur(10px)"
-
-      }}>
-
-        <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
-
-          <input
-
-            value={search} onChange={e => setSearch(e.target.value)}
-
-            placeholder="🔍 Cari tugas..."
-
-            style={{ padding:"7px 12px", borderRadius:8, border:"1px solid var(--border)", fontSize:12, outline:"none", width:180 }}
-
-          />
-
-          <select value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)}
-
-            style={{ padding:"7px 10px", borderRadius:8, border:"1px solid var(--border)", fontSize:12, outline:"none", background:"#fff" }}>
-
-            <option value="semua">Semua Prioritas</option>
-
-            {PRIORITIES.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
-
-          </select>
-
-        </div>
-
-
-
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-
-          <span style={{ fontSize:11.5, color:"var(--text-muted)" }}>
-
-            Total Selesai: <strong style={{ color:"var(--text-main)" }}>{quests.filter(q => q.status === "done").length}/{quests.length}</strong> Tugas Selesai
-
-          </span>
-
-          <div style={{ width:80, height:5, borderRadius:4, background:"#f1f5f9", overflow:"hidden" }}>
-
-            <div style={{
-
-              width: `${quests.length > 0 ? Math.round(quests.filter(q => q.status === "done").length / quests.length * 100) : 0}%`,
-
-              height:"100%", background:"#16a34a"
-
-            }} />
-
-          </div>
-
-        </div>
-
-      </div>
-
-
-
-      {addModal && (
+      fontFamily:"system-ui, sans-serif", fontSize:13,
+
+      background: boardBackgroundStyle,
+
+      backgroundSize:"cover", backgroundPosition:"center",
+
+      color:"var(--text-main)", position:"relative"
+
+    }}>
+
+
+
+      {/* ── Topbar: judul board + foto anggota (admin bermahkota) ── */}
+
+      <div style={{
+        display:"flex", alignItems:"center", justifyContent:"space-between",
+        padding:"10px 16px",
+        background:"rgba(255,255,255,0.92)",
+        borderBottom:"0.5px solid var(--border)",
+        flexShrink:0, backdropFilter:"blur(10px)",
+        boxShadow:"0 1px 4px rgba(0,0,0,0.06)"
+      }}>
+        <span style={{ display:"flex", alignItems:"center", gap:10, minWidth:0 }}>
+          <span className="k-display" style={{ fontSize:18, fontWeight:600, color:"var(--k-ink)", whiteSpace:"nowrap" }}>
+            {boardName || "Board"}
+          </span>
+
+          <MemberStack members={boardMembers} onClick={() => setShowMembers(true)} />
+
+          <span style={{
+            fontSize:10, fontWeight:700, padding:"3px 8px", borderRadius:999,
+            color: isAdmin ? "#166534" : "#1e40af",
+            background: isAdmin ? "rgba(220,252,231,0.9)" : "rgba(219,234,254,0.9)",
+            textTransform:"uppercase", letterSpacing:"0.5px"
+          }}>{isAdmin ? "Admin" : "Member"}</span>
+        </span>
+
+        <div />
+      </div>
+
+      {/* ── Board view navigation ── */}
+      <div style={{display:"flex",alignItems:"center",padding:"10px 24px",background:"rgba(255,255,255,0.7)",borderBottom:"1px solid var(--border)",flexShrink:0,backdropFilter:"blur(14px)",WebkitBackdropFilter:"blur(14px)"}}>
+        <BoardTabs active={activeView} onChange={setActiveView} />
+      </div>
+
+      {/* ── Search + filter bar ── */}
+
+      <div style={{
+        display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12,
+        padding:"10px 16px", background:"rgba(255,255,255,0.8)",
+        borderBottom:"0.5px solid var(--border)", flexShrink:0, backdropFilter:"blur(10px)"
+      }}>
+        <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+          <ToolSearch value={search} onChange={setSearch} />
+
+          <select value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)}
+            aria-label="Filter prioritas"
+            style={{ height:40, padding:"0 12px", borderRadius:11, border:"1px solid var(--k-line)", fontFamily:"var(--k-font-body)", fontSize:12.5, fontWeight:600, color:"var(--k-ink)", outline:"none", background:"rgba(255,255,255,0.96)", cursor:"pointer" }}>
+            <option value="semua">Semua Prioritas</option>
+            {PRIORITIES.map(p => <option key={p.id} value={p.id}>{p.label}</option>)}
+          </select>
+        </div>
+
+        <div style={{ display:"flex", alignItems:"center", gap:10, marginLeft:"auto" }}>
+          {isAdmin && <ToolButton kind="background" onClick={() => setShowAppearance(true)}>Background</ToolButton>}
+          <ToolButton kind="members" onClick={() => setShowMembers(true)}>Members</ToolButton>
+          <button type="button" className="k-btn k-btn-primary" onClick={() => openAddModal("todo")} style={{ height:40, padding:"0 16px", borderRadius:11 }}>
+            <Plus size={16} strokeWidth={2.4} /> Tambah Tugas Baru
+          </button>
+        </div>
+      </div>
+
+      {selectedTaskId !== null && (() => {
+        const task = quests.find(q => String(q.id) === String(selectedTaskId));
+        if (!task) return null;
+        const form = taskEditForm || {
+          title: task.title || "",
+          description: task.note ?? task.description ?? "",
+          status: task.status || "todo",
+          priority: task.priority || "sedang",
+          due_date: toDateKey(task.due_date),
+          start_date: toDateKey(task.start_date),
+          assignees: (Array.isArray(task.assignees) ? task.assignees : []).map(a => Number(a.id ?? a.user_id)).filter(Number.isFinite),
+        };
+        const updateForm = (key, value) => setTaskEditForm(prev => ({ ...(prev || form), [key]: value }));
+        const assignedMembers = (Array.isArray(task.assignees) ? task.assignees : []);
+        return (
+          <div onClick={() => { if (!savingTaskEdit) setSelectedTaskId(null); }} style={{ position:"fixed", inset:0, zIndex:1200, background:"rgba(15,23,42,.48)", display:"flex", alignItems:"center", justifyContent:"center", padding:18 }}>
+            <div onClick={e => e.stopPropagation()} style={{ width:760, maxWidth:"100%", maxHeight:"92vh", overflowY:"auto", background:"#fff", borderRadius:16, boxShadow:"0 24px 70px rgba(15,23,42,.24)", color:"#1e293b" }}>
+              <div style={{ padding:"22px 24px 16px", borderBottom:"1px solid #edf0f4" }}>
+                <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:14 }}>
+                  <div>
+                    <div style={{ color:"#94a3b8", fontSize:11, fontWeight:700, letterSpacing:".04em", marginBottom:5 }}>TASK-{task.id}</div>
+                    <h2 style={{ margin:0, fontSize:21, lineHeight:1.3, fontWeight:750 }}>{task.title}</h2>
+                    <div style={{ color:"#94a3b8", fontSize:11, marginTop:7 }}>Task Kanbify{task.created_at ? ` · Dibuat ${new Date(task.created_at).toLocaleDateString("id-ID")}` : ""}</div>
+                  </div>
+                  <button type="button" aria-label="Tutup detail task" onClick={() => setSelectedTaskId(null)} style={{ border:0, background:"transparent", color:"#64748b", fontSize:24, cursor:"pointer", lineHeight:1 }}>×</button>
+                </div>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, marginTop:16 }}>
+                  <div style={{ display:"flex", gap:4, borderBottom:"1px solid #e2e8f0" }}>
+                    {["detail","edit"].map(tab => <button key={tab} type="button" onClick={() => { if (tab === "edit") beginEditTask(task); else setTaskModalTab("detail"); }} style={{ padding:"9px 16px", border:0, borderBottom:taskModalTab===tab?"2px solid #2563eb":"2px solid transparent", background:"transparent", color:taskModalTab===tab?"#2563eb":"#64748b", fontSize:12, fontWeight:650, cursor:"pointer" }}>{tab==="detail"?"▤  Detail":"✎  Edit"}</button>)}
+                  </div>
+                  <div style={{ position:"relative" }}>
+                    <button type="button" onClick={() => setTaskMenuOpenId(prev => prev === `detail-${task.id}` ? null : `detail-${task.id}`)} style={{ border:"1px solid #e2e8f0", background:"#fff", borderRadius:8, padding:"7px 11px", color:"#475569", cursor:"pointer" }}>⋯</button>
+                    {taskMenuOpenId === `detail-${task.id}` && <div style={{ position:"absolute", right:0, top:38, zIndex:4, width:145, background:"#fff", border:"1px solid #e2e8f0", borderRadius:9, boxShadow:"0 12px 28px rgba(15,23,42,.15)", padding:5 }}>
+                      <button type="button" onClick={() => beginEditTask(task)} style={{ display:"block", width:"100%", padding:"9px 10px", border:0, background:"#fff", textAlign:"left", cursor:"pointer", color:"#334155", fontSize:12 }}>✎ Edit Task</button>
+                      <button type="button" onClick={() => { setTaskMenuOpenId(null); deleteQuest(task.id); }} style={{ display:"block", width:"100%", padding:"9px 10px", border:0, background:"#fff", textAlign:"left", cursor:"pointer", color:"#dc2626", fontSize:12 }}>⌫ Hapus Task</button>
+                    </div>}
+                  </div>
+                </div>
+              </div>
+
+              {taskModalTab === "detail" ? (
+                <div style={{ display:"grid", gridTemplateColumns:"minmax(0,1.3fr) minmax(220px,.9fr)", gap:16, padding:20 }}>
+                  <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+                    <section style={{ border:"1px solid #edf0f4", borderRadius:10, padding:14 }}>
+                      <div style={{ fontSize:12, fontWeight:700, marginBottom:8 }}>Deskripsi / Catatan</div>
+                      <div style={{ fontSize:13, color:task.note ? "#475569" : "#94a3b8", lineHeight:1.65, whiteSpace:"pre-wrap" }}>{task.note || task.description || "Belum ada deskripsi untuk task ini."}</div>
+                    </section>
+                    <section style={{ border:"1px solid #edf0f4", borderRadius:10, padding:14 }}>
+                      <div style={{ fontSize:12, fontWeight:700, marginBottom:10 }}>Informasi Task</div>
+                      <div style={{ display:"grid", gridTemplateColumns:"repeat(2,minmax(0,1fr))", gap:12 }}>
+                        <div><div style={{ fontSize:10, color:"#94a3b8", marginBottom:5 }}>Status</div><span style={{ fontSize:12, fontWeight:650 }}>{FIXED_COLUMNS.find(c => c.id === task.status)?.title || task.status}</span></div>
+                        <div><div style={{ fontSize:10, color:"#94a3b8", marginBottom:5 }}>Prioritas</div><span style={{ display:"inline-block", fontSize:11, fontWeight:700, borderRadius:6, padding:"4px 7px", background:priorityStyle(task.priority).bg, color:priorityStyle(task.priority).text }}>{priorityStyle(task.priority).label}</span></div>
+                        <div><div style={{ fontSize:10, color:"#94a3b8", marginBottom:5 }}>Tanggal mulai</div><span style={{ fontSize:12 }}>{task.start_date ? formatDateLabel(toDateKey(task.start_date)) : "Belum ditentukan"}</span></div>
+                        <div><div style={{ fontSize:10, color:"#94a3b8", marginBottom:5 }}>Deadline</div><span style={{ fontSize:12 }}>{task.due_date ? formatDateLabel(toDateKey(task.due_date)) : "Belum ditentukan"}</span></div>
+                      </div>
+                    </section>
+                    <section style={{ border:"1px solid #edf0f4", borderRadius:10, padding:14 }}>
+                      <div style={{ fontSize:12, fontWeight:700, marginBottom:8 }}>Waktu pengerjaan</div>
+                      <div style={{ fontFamily:"monospace", fontSize:13, color:"#475569" }}>{formatTime(task.time)}</div>
+                    </section>
+                  </div>
+                  <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+                    <section style={{ border:"1px solid #edf0f4", borderRadius:10, padding:14 }}>
+                      <div style={{ fontSize:12, fontWeight:700, marginBottom:10 }}>Anggota yang mengerjakan</div>
+                      {assignedMembers.length ? assignedMembers.map((person, index) => <div key={person.id ?? person.user_id ?? index} style={{ display:"flex", alignItems:"center", gap:9, marginBottom:9 }}>
+                        <span style={{ width:30, height:30, borderRadius:"50%", background:"#e0edff", color:"#1d4ed8", display:"inline-flex", alignItems:"center", justifyContent:"center", fontSize:10, fontWeight:700 }}>{(person.fullname || person.name || person.username || "M").split(/\s+/).map(p=>p[0]).join("").slice(0,2).toUpperCase()}</span>
+                        <span style={{ fontSize:12, color:"#334155" }}>{person.fullname || person.name || person.username || `User ${person.id ?? person.user_id}`}</span>
+                      </div>) : <div style={{ fontSize:12, color:"#94a3b8" }}>Belum ada anggota yang ditugaskan.</div>}
+                      <button type="button" onClick={() => beginEditTask(task)} style={{ marginTop:5, border:"1px solid #e2e8f0", background:"#fff", borderRadius:7, padding:"7px 10px", color:"#475569", fontSize:11, cursor:"pointer" }}>Ubah anggota</button>
+                    </section>
+                    <section style={{ border:"1px solid #edf0f4", borderRadius:10, padding:14 }}>
+                      <div style={{ fontSize:12, fontWeight:700, marginBottom:8 }}>Catatan</div>
+                      <div style={{ fontSize:12, color:"#64748b", lineHeight:1.5 }}>Gunakan tab Edit untuk memperbarui deskripsi, prioritas, status, jadwal, atau anggota task.</div>
+                    </section>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={saveTaskEdit} style={{ padding:20 }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"minmax(0,1.2fr) minmax(220px,.8fr)", gap:16 }}>
+                    <div style={{ display:"flex", flexDirection:"column", gap:13 }}>
+                      <label style={{ fontSize:12, fontWeight:650, color:"#475569" }}>Nama task
+                        <input required maxLength={255} value={form.title} onChange={e => updateForm("title", e.target.value)} style={{ display:"block", width:"100%", marginTop:6, padding:"10px 11px", border:"1px solid #dbe1e8", borderRadius:8, fontSize:13, boxSizing:"border-box" }} />
+                      </label>
+                      <label style={{ fontSize:12, fontWeight:650, color:"#475569" }}>Detail info / catatan
+                        <textarea rows={6} value={form.description} onChange={e => updateForm("description", e.target.value)} placeholder="Jelaskan pekerjaan dan hasil yang diharapkan..." style={{ display:"block", width:"100%", resize:"vertical", marginTop:6, padding:"10px 11px", border:"1px solid #dbe1e8", borderRadius:8, fontSize:13, boxSizing:"border-box", lineHeight:1.5 }} />
+                      </label>
+                      <label style={{ fontSize:12, fontWeight:650, color:"#475569" }}>Anggota yang mengerjakan
+                        <div style={{ marginTop:6, border:"1px solid #dbe1e8", borderRadius:8, padding:"8px 10px", maxHeight:150, overflowY:"auto" }}>
+                          {boardMembers.length === 0 ? <div style={{ fontSize:12, color:"#94a3b8" }}>Tidak ada data anggota board.</div> : boardMembers.map(member => {
+                            const memberId = Number(member.id ?? member.user_id);
+                            const checked = form.assignees.includes(memberId);
+                            return <label key={memberId} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 0", fontSize:12, fontWeight:400, cursor:"pointer" }}>
+                              <input type="checkbox" checked={checked} onChange={e => updateForm("assignees", e.target.checked ? [...new Set([...form.assignees, memberId])] : form.assignees.filter(id => id !== memberId))} />
+                              <span>{member.fullname || member.name || member.username || `User ${memberId}`}</span>
+                            </label>;
+                          })}
+                        </div>
+                      </label>
+                    </div>
+                    <div style={{ display:"flex", flexDirection:"column", gap:13 }}>
+                      <label style={{ fontSize:12, fontWeight:650, color:"#475569" }}>Status
+                        <select value={form.status} onChange={e => updateForm("status", e.target.value)} style={{ display:"block", width:"100%", marginTop:6, padding:"10px 11px", border:"1px solid #dbe1e8", borderRadius:8, background:"#fff", fontSize:13 }}>
+                          {FIXED_COLUMNS.map(col => <option key={col.id} value={col.id}>{col.title}</option>)}
+                          {form.status === "backlog" && <option value="backlog">Backlog</option>}
+                        </select>
+                      </label>
+                      <label style={{ fontSize:12, fontWeight:650, color:"#475569" }}>Prioritas
+                        <select value={form.priority} onChange={e => updateForm("priority", e.target.value)} style={{ display:"block", width:"100%", marginTop:6, padding:"10px 11px", border:"1px solid #dbe1e8", borderRadius:8, background:"#fff", fontSize:13 }}>
+                          {PRIORITIES.map(priority => <option key={priority.id} value={priority.id}>{priority.label}</option>)}
+                        </select>
+                      </label>
+                      <label style={{ fontSize:12, fontWeight:650, color:"#475569" }}>Tanggal mulai
+                        <input type="date" value={form.start_date || ""} onChange={e => updateForm("start_date", e.target.value)} style={{ display:"block", width:"100%", marginTop:6, padding:"10px 11px", border:"1px solid #dbe1e8", borderRadius:8, fontSize:13, boxSizing:"border-box" }} />
+                      </label>
+                      <label style={{ fontSize:12, fontWeight:650, color:"#475569" }}>Deadline
+                        <input type="date" value={form.due_date || ""} onChange={e => updateForm("due_date", e.target.value)} style={{ display:"block", width:"100%", marginTop:6, padding:"10px 11px", border:"1px solid #dbe1e8", borderRadius:8, fontSize:13, boxSizing:"border-box" }} />
+                      </label>
+                    </div>
+                  </div>
+                  <div style={{ display:"flex", justifyContent:"flex-end", gap:8, marginTop:22, borderTop:"1px solid #edf0f4", paddingTop:16 }}>
+                    <button type="button" disabled={savingTaskEdit} onClick={() => setTaskModalTab("detail")} style={{ padding:"9px 14px", border:"1px solid #dbe1e8", borderRadius:8, background:"#fff", cursor:"pointer", color:"#475569", fontSize:12 }}>Batal</button>
+                    <button type="submit" disabled={savingTaskEdit || !form.title.trim()} style={{ padding:"9px 16px", border:0, borderRadius:8, background:"#f97316", color:"#fff", fontWeight:700, cursor:savingTaskEdit?"wait":"pointer", fontSize:12 }}>{savingTaskEdit?"Menyimpan...":"Simpan Perubahan"}</button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {addModal && (
         <div
           style={{ position:"fixed", inset:0, background:"rgba(15,23,42,0.42)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1001, padding:16 }}
           onClick={() => { if (!savingTask) setAddModal(null); }}
         >
-          <div onClick={e => e.stopPropagation()} style={{ background:"#fff", borderRadius:16, padding:24, width:440, maxWidth:"100%", maxHeight:"90vh", overflowY:"auto", fontFamily:"system-ui, sans-serif", boxShadow:"0 20px 60px rgba(0,0,0,0.18)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background:"#fff", borderRadius:12, padding:20, width:440, maxWidth:"100%", maxHeight:"90vh", overflowY:"auto", fontFamily:"system-ui, sans-serif", boxShadow:"0 20px 60px rgba(0,0,0,0.18)" }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:22 }}>
               <h3 style={{ margin:0, fontSize:18, fontWeight:700, color:"#1e293b" }}>Tambah Tugas Baru</h3>
               <button type="button" aria-label="Tutup" disabled={savingTask} onClick={() => setAddModal(null)} style={{ border:0, background:"transparent", color:"#64748b", fontSize:22, cursor:"pointer", lineHeight:1 }}>×</button>
             </div>
 
             <form onSubmit={submitNewTask}>
-              <label style={{ display:"block", fontSize:12, fontWeight:600, color:"#475569", marginBottom:7 }}>Nama Tugas</label>
-              <input autoFocus required value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Contoh: Membuat wireframe layout" style={{ width:"100%", padding:"11px 12px", borderRadius:8, border:"1px solid #dbe1e8", fontSize:13, outline:"none", boxSizing:"border-box", marginBottom:18 }} />
+              <label style={{ display:"block", fontSize:10, fontWeight:700, color:"#475569", marginBottom:6 }}>JUDUL TUGAS</label>
+              <input autoFocus required value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Misal: Membuat wireframe layout..." style={{ width:"100%", padding:"10px 11px", borderRadius:7, border:"1px solid #cbd5e1", fontSize:12, outline:"none", boxSizing:"border-box", marginBottom:13 }} />
 
-              <label style={{ display:"block", fontSize:12, fontWeight:600, color:"#475569", marginBottom:7 }}>Prioritas</label>
-              <div style={{ position:"relative", marginBottom:18 }}>
-                <button type="button" onClick={() => setPriorityMenuOpen(v => !v)} style={{ width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 12px", borderRadius:8, border:"1px solid #dbe1e8", background:"#fff", cursor:"pointer", fontSize:13, color:"#334155" }}>
-                  <span style={{ display:"flex", alignItems:"center", gap:9 }}><span style={{ color:priorityStyle(newPriority).text, fontSize:18, fontWeight:700, width:18, textAlign:"center" }}>{priorityStyle(newPriority).symbol}</span>{priorityStyle(newPriority).label}</span>
-                  <span style={{ color:"#64748b" }}>▾</span>
-                </button>
-                {priorityMenuOpen && <>
-                  <div onClick={() => setPriorityMenuOpen(false)} style={{ position:"fixed", inset:0, zIndex:5 }} />
-                  <div style={{ position:"absolute", top:"calc(100% + 4px)", left:0, right:0, zIndex:6, background:"#fff", border:"1px solid #e2e8f0", borderRadius:9, padding:4, boxShadow:"0 10px 25px rgba(15,23,42,0.12)" }}>
-                    {PRIORITIES.map(p => <button type="button" key={p.id} onClick={() => { setNewPriority(p.id); setPriorityMenuOpen(false); }} style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"9px 10px", border:0, borderRadius:6, background:newPriority === p.id ? "#f8fafc" : "#fff", cursor:"pointer", textAlign:"left", color:"#334155", fontSize:13 }}><span style={{ color:p.text, fontSize:18, fontWeight:700, width:18, textAlign:"center" }}>{p.symbol}</span>{p.label}{newPriority === p.id && <span style={{ marginLeft:"auto", color:"#64748b" }}>✓</span>}</button>)}
-                  </div>
-                </>}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:13}}>
+                <label style={{display:"block",fontSize:10,fontWeight:700,color:"#475569"}}>STATUS KOLOM
+                  <select value={newStatus} onChange={e=>setNewStatus(e.target.value)} style={{display:"block",width:"100%",marginTop:6,padding:"9px 10px",borderRadius:7,border:"1px solid #cbd5e1",background:"#fff",fontSize:12,boxSizing:"border-box"}}>
+                    {FIXED_COLUMNS.map(col=><option key={col.id} value={col.id}>{col.title}</option>)}<option value="backlog">Backlog</option>
+                  </select>
+                </label>
+                <label style={{display:"block",fontSize:10,fontWeight:700,color:"#475569"}}>PRIORITAS
+                  <select value={newPriority} onChange={e=>setNewPriority(e.target.value)} style={{display:"block",width:"100%",marginTop:6,padding:"9px 10px",borderRadius:7,border:"1px solid #cbd5e1",background:"#fff",fontSize:12,boxSizing:"border-box"}}>
+                    {PRIORITIES.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}
+                  </select>
+                </label>
               </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:13}}>
+                <label style={{display:"block",fontSize:10,fontWeight:700,color:"#475569"}}>TANGGAL MULAI
+                  <input type="date" value={newStartDate} onChange={e=>setNewStartDate(e.target.value)} style={{display:"block",width:"100%",marginTop:6,padding:"9px 8px",borderRadius:7,border:"1px solid #cbd5e1",fontSize:12,boxSizing:"border-box"}} />
+                </label>
+                <label style={{display:"block",fontSize:10,fontWeight:700,color:"#475569"}}>DEADLINE
+                  <input type="date" min={newStartDate || undefined} value={newDueDate} onChange={e=>setNewDueDate(e.target.value)} style={{display:"block",width:"100%",marginTop:6,padding:"9px 8px",borderRadius:7,border:"1px solid #cbd5e1",fontSize:12,boxSizing:"border-box"}} />
+                </label>
+              </div>
+              <label style={{display:"block",fontSize:10,fontWeight:700,color:"#475569",marginBottom:6}}>CATATAN / DETAIL</label>
+              <textarea rows={3} value={newDescription} onChange={e=>setNewDescription(e.target.value)} placeholder="Tambahkan catatan atau deskripsi tugas di sini..." style={{display:"block",width:"100%",resize:"vertical",padding:"10px 11px",borderRadius:7,border:"1px solid #cbd5e1",fontSize:12,boxSizing:"border-box",marginBottom:15}} />
 
               <label style={{ display:"block", fontSize:12, fontWeight:600, color:"#475569", marginBottom:7 }}>Pilih Member</label>
               <div style={{ border:"1px solid #dbe1e8", borderRadius:8, padding:"7px 10px", marginBottom:18, maxHeight:150, overflowY:"auto" }}>
@@ -1413,9 +1492,6 @@ const openAddModal = (colId = "todo") => {
               </div>
               {selectedAssignees.length > 0 && <div style={{ fontSize:11, color:"#64748b", marginTop:-11, marginBottom:16 }}>{selectedAssignees.length} anggota dipilih</div>}
 
-              <label style={{ display:"block", fontSize:12, fontWeight:600, color:"#475569", marginBottom:7 }}>Jadwal / Due Date</label>
-              <input type="date" value={newDueDate} onChange={e => setNewDueDate(e.target.value)} style={{ width:"100%", padding:"10px 11px", borderRadius:8, border:"1px solid #dbe1e8", fontSize:13, outline:"none", boxSizing:"border-box", marginBottom:22, color:"#334155" }} />
-
               <div style={{ display:"flex", gap:10, justifyContent:"flex-end" }}>
                 <button type="button" disabled={savingTask} onClick={() => setAddModal(null)} style={{ padding:"9px 16px", borderRadius:8, border:"1px solid #dbe1e8", background:"#fff", cursor:"pointer", fontSize:13, color:"#334155" }}>Batal</button>
                 <button type="submit" disabled={savingTask || !newTitle.trim()} style={{ padding:"9px 18px", borderRadius:8, border:"none", background:savingTask ? "#fdba74" : "#f97316", color:"#fff", fontWeight:600, cursor:savingTask ? "wait" : "pointer", fontSize:13 }}>{savingTask ? "Menyimpan..." : "Simpan"}</button>
@@ -1427,494 +1503,337 @@ const openAddModal = (colId = "todo") => {
 
       {showMembers && (
 
-        <MembersModal boardId={boardId} onClose={() => setShowMembers(false)} />
+        <MembersModal boardId={boardId} onClose={() => setShowMembers(false)} />
 
-      )}
+      )}
 
 
 
-      <div style={{ display:"flex", flex:1, overflow:"hidden", position:"relative" }}>
+      {showAppearance && isAdmin && (
+        <div style={{ position:"fixed", inset:0, zIndex:1100, background:"rgba(15,23,42,.45)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }} onClick={() => !appearanceSaving && setShowAppearance(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ width:440, maxWidth:"100%", background:"#fff", borderRadius:16, padding:24, boxShadow:"0 20px 60px rgba(0,0,0,.18)" }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}><h3 style={{ margin:0, color:"#1e293b", fontSize:18 }}>Background Board</h3><button onClick={() => setShowAppearance(false)} style={{ border:0, background:"transparent", fontSize:22, cursor:"pointer", color:"#64748b" }}>×</button></div>
+            <p style={{ margin:"0 0 16px", color:"#64748b", fontSize:13 }}>Pilih tampilan untuk board ini. Semua anggota akan melihat background yang sama.</p>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(2,minmax(0,1fr))", gap:10 }}>
+              {[
+                {id:"whiteboard",label:"Papan tulis putih",preview:"#ffffff",border:"#dbe1e8"}, {id:"green",label:"Papan tulis hijau",preview:"linear-gradient(135deg,#174b38,#23634a)",border:"#174b38"}, {id:"blue",label:"Biru lembut",preview:"linear-gradient(135deg,#dbeafe,#eff6ff)",border:"#bfdbfe"}, {id:"cream",label:"Krem",preview:"linear-gradient(135deg,#f5ead5,#fffaf0)",border:"#e7d8bb"}, {id:"dark",label:"Gelap",preview:"linear-gradient(135deg,#202124,#34363a)",border:"#34363a"}
+              ].map(option => <button key={option.id} onClick={() => setBoardAppearance(v => ({...v,background:option.id}))} style={{ textAlign:"left", padding:0, border:boardAppearance.background===option.id?"2px solid #f97316":"1px solid #e2e8f0", borderRadius:10, overflow:"hidden", background:"#fff", cursor:"pointer" }}><div style={{ height:58, background:option.preview, borderBottom:`1px solid ${option.border}` }} /><div style={{ padding:"9px 10px", fontSize:12, color:"#334155", fontWeight:600 }}>{option.label}{boardAppearance.background===option.id?" ✓":""}</div></button>)}
+            </div>
+            <label style={{ display:"block", marginTop:18, color:"#334155", fontWeight:600, fontSize:12 }}>Atau unggah gambar sendiri (JPG, PNG, WEBP; maks. 5 MB)</label><input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => setAppearanceFile(e.target.files?.[0] || null)} style={{ width:"100%", marginTop:8, fontSize:12 }} />
+            {appearanceFile && <div style={{ marginTop:6, fontSize:12, color:"#64748b" }}>Dipilih: {appearanceFile.name}</div>}
+            <div style={{ display:"flex", justifyContent:"flex-end", gap:8, marginTop:22 }}><button onClick={() => setShowAppearance(false)} disabled={appearanceSaving} style={{ padding:"9px 14px", border:"1px solid #dbe1e8", borderRadius:8, background:"#fff", cursor:"pointer" }}>Batal</button><button onClick={saveBoardAppearance} disabled={appearanceSaving} style={{ padding:"9px 16px", border:0, borderRadius:8, background:"#f97316", color:"#fff", fontWeight:600, cursor:"pointer" }}>{appearanceSaving?"Menyimpan...":"Simpan background"}</button></div>
+          </div>
+        </div>
+      )}
 
+      <div style={{ display:"flex", flex:1, overflow:"hidden", position:"relative" }}>
 
 
-        {/* ── Board ── */}
 
-        <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden", padding:"20px" }}>
+        {/* ── Board ── */}
 
-          {loading ? (
+        <div style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden", padding:"20px", minWidth:0 }}>
 
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"center", flex:1, color:"var(--text-muted)", fontSize:14 }}>
+          {loading ? (
 
-              Memuat tugas...
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"center", flex:1, color:boardInkSoft, transition:boardInkTransition, fontSize:14 }}>
 
-            </div>
+              Memuat tugas...
 
-          ) : (
+            </div>
 
-            <div style={{ display:"flex", gap:20, flex:1, overflowX:"auto", overflowY:"hidden" }}>
+          ) : (
 
-              {FIXED_COLUMNS.map(col => {
+            <div style={{ display: activeView === "board" ? "flex" : "none", gap:20, flex:1, overflowX:"auto", overflowY:"hidden" }}>
 
-                const cards = filteredQuests(col.id);
+              {FIXED_COLUMNS.map(col => {
 
-                const isOver = dragOver === col.id;
+                const cards = filteredQuests(col.id);
 
-                return (
+                const isOver = dragOver === col.id;
 
-                  <div key={col.id}
+                return (
 
-                    onDragOver={e => handleDragOver(e, col.id)}
+                  <div key={col.id}
 
-                    onDragLeave={handleDragLeave}
+                    onDragOver={e => handleDragOver(e, col.id)}
 
-                    onDrop={e => handleDrop(e, col.id)}
+                    onDragLeave={handleDragLeave}
 
-                    style={{
+                    onDrop={e => handleDrop(e, col.id)}
 
-                      flex:"1 0 250px", display:"flex", flexDirection:"column",
+                    style={{
 
-                      borderRadius:18, border:"1px solid var(--border)",
+                      flex:"1 0 250px", display:"flex", flexDirection:"column",
 
-                      background: isOver ? "var(--bg-column-hover)" : "var(--bg-column)",
+                      borderRadius:0, border:"none",
 
-                      backdropFilter:"blur(8px)",
+                      background: isOver ? "rgba(255,255,255,0.12)" : "transparent",
 
-                      transition:"background .2s", minWidth:240,
+                      backdropFilter:"none",
 
-                      overflow:"hidden", boxShadow:"0 4px 12px rgba(0,0,0,0.03)"
+                      transition:"background .2s", minWidth:240,
 
-                    }}>
+                      overflow:"visible", boxShadow:"none"
 
+                    }}>
 
 
-                    {/* Column header */}
 
-                    <div style={{ padding:"14px 16px", borderBottom:"0.5px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"space-between", background:"var(--bg-header)", flexShrink:0 }}>
+                    {/* Column header: kotak glass berisi nama tahap + jumlah tugas (selalu terbaca di background apa pun) */}
 
-                      <span style={{ fontWeight:700, fontSize:14, userSelect:"none", color:"var(--text-main)", display:"flex", alignItems:"center", gap:8 }}>
+                    <div className="kb-col-chip" style={{ margin:"6px 8px 0", padding:"9px 10px 9px 14px", borderRadius:14, display:"flex", alignItems:"center", justifyContent:"space-between", gap:10, flexShrink:0, background:"rgba(255,255,255,0.92)", backdropFilter:"blur(14px) saturate(150%)", WebkitBackdropFilter:"blur(14px) saturate(150%)", border:"1px solid rgba(255,255,255,0.85)", boxShadow:"0 6px 20px rgba(15,23,42,0.16), inset 0 1px 0 rgba(255,255,255,0.8)" }}>
 
-                        <span style={{ width:8, height:8, borderRadius:"50%", background:col.dot, display:"inline-block" }} />
+                      <span style={{ fontWeight:800, fontSize:14, letterSpacing:"-0.1px", userSelect:"none", color:"#0f172a", display:"flex", alignItems:"center", gap:9 }}>
 
-                        {col.title}
+                        <span style={{ width:9, height:9, borderRadius:"50%", background:col.dot, boxShadow:`0 0 0 3px ${col.dot}33`, display:"inline-block" }} />
 
-                      </span>
+                        {col.title}
 
-                      <div style={{ background:"white", color:"#667eea", fontSize:11, borderRadius:"50%", width:22, height:22, display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700, border:"1px solid var(--border)" }}>
+                      </span>
 
-                        {cards.length}
+                      <div title={`${cards.length} tugas`} style={{ background:col.dot, color:"#ffffff", fontSize:12, borderRadius:999, minWidth:26, height:26, padding:"0 8px", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:800, boxShadow:`0 3px 10px ${col.dot}59` }}>
 
-                      </div>
+                        {cards.length}
 
-                    </div>
+                      </div>
 
+                    </div>
 
 
-                    {/* Cards */}
 
-                    <div style={{ flex:1, overflowY:"auto", padding:"14px" }}>
+                    {/* Cards */}
 
-                      {cards.length === 0 && col.id !== "in-progress" && col.id !== "done" && (
+                    <div style={{ flex:1, overflowY:"auto", padding:"12px 8px 14px", minHeight:180 }}>
+
+                      {cards.length === 0 && col.id !== "in-progress" && col.id !== "done" && (
+
+                        <div style={{ textAlign:"center", paddingTop:10 }}>
+
+                          <button onClick={() => openAddModal(col.id)} className="kb-cal-btn" style={{ width:34, height:34, borderRadius:"50%", border:"1px solid rgba(255,255,255,0.85)", background:"rgba(255,255,255,0.8)", backdropFilter:"blur(10px)", WebkitBackdropFilter:"blur(10px)", color:"#334155", boxShadow:"0 4px 12px rgba(15,23,42,0.14)", fontSize:20, lineHeight:1, cursor:"pointer" }}>+</button>
+
+                        </div>
+
+                      )}
+
+
+
+                      {cards.map(quest => (
+                        <TaskCard
+                          key={quest.id}
+                          quest={quest}
+                          cardColor={CARD_COLORS.find(c => c.bg === quest.color)}
+                          menuOpen={String(taskMenuOpenId) === String(quest.id)}
+                          onOpen={() => openTaskDetails(quest)}
+                          onDragStart={e => handleDragStart(e, quest.id)}
+                          onToggleMenu={() => setTaskMenuOpenId(prev => String(prev) === String(quest.id) ? null : quest.id)}
+                          onCloseMenu={() => setTaskMenuOpenId(null)}
+                          onEdit={() => { setTaskMenuOpenId(null); setSelectedTaskId(quest.id); beginEditTask(quest); }}
+                          onDelete={() => { setTaskMenuOpenId(null); deleteQuest(quest.id); }}
+                          onToggleTimer={() => toggleTimer(quest.id)}
+                        />
+                      ))}
+
+                      {cards.length > 0 && col.id !== "in-progress" && col.id !== "done" && (
+
+                        <div style={{ textAlign:"center", marginTop:4 }}>
+
+                          <button onClick={() => openAddModal(col.id)} className="kb-cal-btn" style={{ width:34, height:34, borderRadius:"50%", border:"1px solid rgba(255,255,255,0.85)", background:"rgba(255,255,255,0.8)", backdropFilter:"blur(10px)", WebkitBackdropFilter:"blur(10px)", color:"#334155", boxShadow:"0 4px 12px rgba(15,23,42,0.14)", fontSize:20, lineHeight:1, cursor:"pointer" }}>+</button>
+
+                        </div>
+
+                      )}
+
+                    </div>
+
+                  </div>
+
+                );
+
+              })}
 
-                        <div style={{ textAlign:"center", paddingTop:10 }}>
+            </div>
 
-                          <button onClick={() => openAddModal(col.id)} style={{ background:"none", border:"none", color:"var(--text-muted)", fontSize:22, cursor:"pointer" }}>+</button>
+          )}
 
-                        </div>
+          {!loading && activeView !== "board" && (
+            <div key={activeView} className="kb-view-in" style={{ flex:1, minHeight:0, borderRadius:20, padding:22, ...(activeView === "gantt" ? { display:"flex", flexDirection:"column", overflow:"hidden" } : { overflowY:"auto" }), ...GLASS.panel }}>
+              {activeView === "backlog" && <>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, marginBottom:18 }}>
+                  <div>
+                    <h2 style={{ margin:0, fontSize:22, fontWeight:800, letterSpacing:"-0.3px", color:"#0f172a" }}>Backlog</h2>
+                    <p style={{ margin:"5px 0 0", fontSize:12, color:"#475569" }}>Tugas yang belum siap masuk pengerjaan aktif.</p>
+                  </div>
+                  <button className="kb-cal-btn" onClick={() => openAddModal("backlog")} style={{ border:0, borderRadius:10, background:"linear-gradient(135deg,#fb923c,#f97316)", boxShadow:"0 6px 16px rgba(249,115,22,.35)", color:"white", padding:"10px 15px", fontWeight:700, fontSize:12, cursor:"pointer" }}>+ Tambah tugas</button>
+                </div>
+                {quests.filter(q => q.status === "backlog").length === 0
+                  ? <div style={{ padding:36, textAlign:"center", color:"#64748b", fontSize:13 }}>Belum ada tugas di backlog. Tambahkan tugas yang ingin dikerjakan nanti.</div>
+                  : <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))", gap:14 }}>
+                      {quests.filter(q => q.status === "backlog").map(q => (
+                        <div key={q.id} className="kb-glass-card" onClick={() => openTaskDetails(q)} style={{ ...GLASS.card, borderRadius:14, padding:14, cursor:"pointer" }}>
+                          <div style={{ display:"flex", justifyContent:"space-between", gap:8, marginBottom:9 }}>
+                            <span style={{ fontSize:10, color:"#64748b", fontWeight:700 }}>TASK-{q.id}</span>
+                            <span style={{ fontSize:10, fontWeight:700, color:priorityStyle(q.priority).text, background:priorityStyle(q.priority).bg, padding:"3px 7px", borderRadius:6 }}>{priorityStyle(q.priority).label}</span>
+                          </div>
+                          <div style={{ fontWeight:700, color:"#0f172a", fontSize:13 }}>{q.title}</div>
+                          {q.note && <p style={{ fontSize:12, color:"#475569", lineHeight:1.5 }}>{q.note}</p>}
+                          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:8, marginTop:12 }}>
+                            <span style={{ fontSize:11, color:"#475569" }}>{q.due_date ? `Deadline ${formatDateLabel(toDateKey(q.due_date))}` : "Belum ada deadline"}</span>
+                            <button
+                              onClick={e => { e.stopPropagation(); const updated = { ...q, status:"todo", isRunning:false }; setQuests(prev => prev.map(t => String(t.id) === String(q.id) ? updated : t)); syncTask(updated); }}
+                              style={{ border:"1px solid rgba(251,146,60,.5)", background:"rgba(255,247,237,.85)", color:"#c2410c", padding:"6px 9px", borderRadius:7, cursor:"pointer", fontSize:11, fontWeight:700, whiteSpace:"nowrap", flexShrink:0 }}
+                            >Pindah ke To Do</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>}
+              </>}
 
-                      )}
+              {activeView === "gantt" && (
+                <BoardGantt quests={ganttQuests} onOpenTask={openTaskDetails} onAddTask={() => openAddModal("todo")} />
+              )}
 
+              {activeView === "files" && <>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, marginBottom:18 }}>
+                  <div>
+                    <h2 style={{ margin:0, fontSize:22, fontWeight:800, letterSpacing:"-0.3px", color:"#0f172a" }}>Files</h2>
+                    <p style={{ margin:"5px 0 0", fontSize:12, color:"#475569" }}>Dokumen dan lampiran yang dibagikan di board ini.</p>
+                  </div>
+                  <label className="kb-cal-btn" style={{ border:0, borderRadius:10, background:fileUploading ? "#fdba74" : "linear-gradient(135deg,#fb923c,#f97316)", boxShadow:"0 6px 16px rgba(249,115,22,.35)", color:"white", padding:"10px 15px", fontWeight:700, cursor:fileUploading ? "wait" : "pointer", fontSize:12 }}>
+                    {fileUploading ? "Mengunggah..." : "+ Unggah file"}
+                    <input type="file" disabled={fileUploading} onChange={e => { uploadBoardFile(e.target.files?.[0]); e.target.value = ""; }} style={{ display:"none" }} />
+                  </label>
+                </div>
+                {fileError && <div style={{ padding:10, marginBottom:12, borderRadius:8, background:"rgba(254,242,242,.9)", color:"#b91c1c", fontSize:12 }}>{fileError}</div>}
+                {filesLoading
+                  ? <div style={{ padding:28, textAlign:"center", color:"#475569", fontSize:12 }}>Memuat file...</div>
+                  : boardFiles.length === 0
+                    ? <div style={{ padding:36, textAlign:"center", color:"#64748b", fontSize:13 }}>Belum ada file. Unggah dokumen untuk membagikannya kepada anggota board.</div>
+                    : <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                        {boardFiles.map(file => (
+                          <div key={file.id} className="kb-glass-card" style={{ ...GLASS.card, display:"flex", alignItems:"center", gap:12, padding:12, borderRadius:12 }}>
+                            <div style={{ width:38, height:38, borderRadius:10, background:"rgba(255,255,255,.75)", border:"1px solid rgba(255,255,255,.9)", display:"grid", placeItems:"center", color:"#475569", fontWeight:800, fontSize:10 }}>FILE</div>
+                            <div style={{ flex:1, minWidth:0 }}>
+                              <div style={{ fontSize:12, fontWeight:700, color:"#0f172a", overflowWrap:"anywhere" }}>{file.original_name || file.name || file.filename || `File ${file.id}`}</div>
+                              <div style={{ fontSize:10, color:"#64748b", marginTop:4 }}>{file.created_at ? new Date(file.created_at).toLocaleDateString("id-ID") : "File board"}{file.user?.fullname ? ` · ${file.user.fullname}` : ""}</div>
+                            </div>
+                            <button onClick={() => downloadBoardFile(file)} style={{ border:"1px solid rgba(255,255,255,.9)", background:"rgba(255,255,255,.7)", borderRadius:7, padding:"7px 10px", cursor:"pointer", fontSize:11, color:"#334155" }}>Unduh</button>
+                            {isAdmin && <button onClick={() => removeBoardFile(file)} style={{ border:"1px solid rgba(254,202,202,.9)", background:"rgba(255,255,255,.7)", borderRadius:7, padding:"7px 10px", cursor:"pointer", fontSize:11, color:"#b91c1c" }}>Hapus</button>}
+                          </div>
+                        ))}
+                      </div>}
+              </>}
+            </div>
+          )}
+
+        </div>
 
+      </div>
 
-                      {cards.map(quest => {
 
-                        const cardColor = CARD_COLORS.find(c => c.bg === quest.color);
 
-                        return (
+      <style>{`
 
-                          <div key={quest.id} draggable
+        :root {
 
-                            onDragStart={e => handleDragStart(e, quest.id)}
+          --bg-surface:       rgba(255,255,255,0.92);
 
-                            style={{
+          --sidebar-surface:  rgba(250,250,248,0.88);
 
-                              background: quest.color || "var(--bg-card)",
+          --bg-header:        rgba(255,255,255,0.5);
 
-                              border: `1px solid ${cardColor?.border || "var(--border-card)"}`,
+          --bg-column:        rgba(255,255,255,0.4);
 
-                              borderRadius:10, padding:"12px", marginBottom:10,
+          --bg-column-hover:  rgba(235,245,255,0.55);
 
-                              cursor:"grab", boxShadow:"0 2px 6px var(--shadow)",
+          --bg-card:          #ffffff;
 
-                              transition:"border-color .15s, background .2s",
+          --bg-badge:         rgba(0,0,0,0.06);
 
-                            }}
+          --bg-timer:         #ffffff;
 
-                            onMouseOver={e => e.currentTarget.style.borderColor = cardColor?.border || "var(--accent)"}
+          --bg-note-box:      rgba(0,0,0,0.03);
 
-                            onMouseOut={e => e.currentTarget.style.borderColor = cardColor?.border || "var(--border-card)"}>
+          --border:           rgba(0,0,0,0.12);
 
+          --border-card:      rgba(0,0,0,0.1);
 
+          --text-main:        #2b2b29;
 
-                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+          --text-muted:       #6e6e6b;
 
-                              <span style={{
+          --accent:           #667eea;
 
-                                fontSize:9.5, fontWeight:700, padding:"3px 9px", borderRadius:999,
+          --shadow:           rgba(0,0,0,0.04);
 
-                                textTransform:"uppercase", letterSpacing:"0.4px",
+          --green:            #16a34a; --green-bg: rgba(22,163,74,0.1);
 
-                                background: priorityStyle(quest.priority).bg,
+          --amber:            #d97706; --amber-bg: rgba(217,119,6,0.1);
 
-                                color: priorityStyle(quest.priority).text
+        }
 
-                              }}>{priorityStyle(quest.priority).label}</span>
+        /* ── Tabs pill ── */
+        .kb-tabs-track { position:relative; display:inline-flex; flex-wrap:wrap; gap:4px; padding:5px; border-radius:999px; background:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.85); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:0 4px 18px rgba(15,23,42,0.1), inset 0 1px 0 rgba(255,255,255,0.8); }
+        .kb-tab-indicator { position:absolute; left:0; top:0; border-radius:999px; background:linear-gradient(135deg,#fb923c,#f97316 55%,#ea580c); box-shadow:0 6px 16px rgba(249,115,22,0.42); pointer-events:none; transition: transform .5s cubic-bezier(.34,1.4,.5,1), width .5s cubic-bezier(.34,1.4,.5,1), height .5s cubic-bezier(.34,1.4,.5,1), opacity .2s; }
+        .kb-tab { position:relative; z-index:1; display:inline-flex; align-items:center; gap:8px; padding:9px 16px; border:0; border-radius:999px; background:transparent; color:#334155; font-size:12.5px; font-weight:600; cursor:pointer; transition:color .25s, background .25s, transform .15s; animation:kb-tab-in .55s cubic-bezier(.22,1,.36,1) backwards; }
+        .kb-tab svg { transition:transform .3s cubic-bezier(.34,1.56,.64,1); }
+        .kb-tab:hover:not(.is-active) { background:rgba(255,255,255,0.85); color:#c2410c; }
+        .kb-tab:hover svg { transform:scale(1.18) rotate(-6deg); }
+        .kb-tab:active { transform:scale(.96); }
+        .kb-tab.is-active { color:#fff; font-weight:700; }
+        .kb-tab:focus-visible { outline:2px solid #ea580c; outline-offset:2px; }
 
-                              {<span onClick={() => deleteQuest(quest.id)} style={{ cursor:"pointer", color:"var(--text-muted)", fontSize:11, flexShrink:0, opacity:0.6 }}>✕</span>}
+        /* ── Animasi umum ── */
+        @keyframes kb-tab-in { from { opacity:0; transform:translateY(-12px) scale(.9); } to { opacity:1; transform:none; } }
+        @keyframes kb-view-in { from { opacity:0; transform:translateY(16px) scale(.985); } to { opacity:1; transform:none; } }
+        @keyframes kb-slide-next { from { opacity:0; transform:translateX(26px); } to { opacity:1; transform:none; } }
+        @keyframes kb-slide-prev { from { opacity:0; transform:translateX(-26px); } to { opacity:1; transform:none; } }
+        @keyframes kb-pulse { 0%,100% { box-shadow:0 0 0 0 rgba(249,115,22,.5); } 50% { box-shadow:0 0 0 6px rgba(249,115,22,0); } }
+        .kb-view-in { animation:kb-view-in .45s cubic-bezier(.22,1,.36,1) both; }
+        .kb-slide-next { animation:kb-slide-next .35s cubic-bezier(.22,1,.36,1) both; }
+        .kb-slide-prev { animation:kb-slide-prev .35s cubic-bezier(.22,1,.36,1) both; }
 
-                            </div>
+        .kb-col-chip { transition:transform .2s ease, box-shadow .2s ease; }
+        .kb-col-chip:hover { transform:translateY(-1px); }
 
+        /* ── Glass card + tombol ── */
+        .kb-glass-card { transition:transform .2s ease, box-shadow .2s ease, background .2s ease; }
+        .kb-glass-card:hover { transform:translateY(-2px); background:rgba(255,255,255,0.78) !important; box-shadow:0 12px 26px rgba(15,23,42,0.13) !important; }
+        .kb-task { transition:transform .16s ease, box-shadow .16s ease; }
+        .kb-task:hover { transform:translateY(-2px); box-shadow:0 12px 24px -10px rgba(30,25,10,0.28) !important; }
+        .kb-task:focus-visible { outline:2px solid #ea580c; outline-offset:2px; }
+        .kb-cal-btn { transition:transform .15s ease, filter .15s ease; }
+        .kb-cal-btn:hover { transform:translateY(-1px); filter:brightness(1.04); }
+        .kb-cal-btn:active { transform:scale(.95); }
 
+        /* ── Calendar ── */
+        .kb-cal-layout { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:18px; align-items:start; }
+        @media (max-width:1000px) { .kb-cal-layout { grid-template-columns:minmax(0,1fr); } }
+        .kb-cal-cell { transition:background .2s, box-shadow .2s; }
+        .kb-cal-cell:hover::after { content:""; position:absolute; inset:0; background:rgba(255,255,255,0.35); pointer-events:none; }
+        .kb-cal-cell:focus-visible { box-shadow:inset 0 0 0 2px #ea580c !important; }
+        .kb-cal-chip { transition:transform .15s ease, filter .15s ease; }
+        .kb-cal-chip:hover { transform:translateY(-1px); filter:brightness(.95); z-index:2; }
+        .kb-agenda-item { transition:transform .15s ease, background .15s ease; }
+        .kb-agenda-item:hover { transform:translateX(3px); background:rgba(255,255,255,0.95) !important; }
 
-                            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:6, marginBottom:8 }}>
+        @media (prefers-reduced-motion:reduce) {
+          .kb-tab, .kb-view-in, .kb-slide-next, .kb-slide-prev { animation:none !important; }
+          .kb-tab-indicator { transition:none !important; }
+        }
 
-                              <p style={{ margin:0, fontWeight:600, fontSize:13, color:"var(--text-main)", lineHeight:1.4, wordBreak:"break-word", flex:1 }}>{quest.title}</p>
+        * { box-sizing: border-box; } body { margin: 0; }
 
-                            </div>
+        ::-webkit-scrollbar { width:6px; height:6px; }
 
+        ::-webkit-scrollbar-track { background:transparent; }
 
+        ::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
 
-                            {quest.due_date && (
+      `}</style>
 
-                              <div style={{ fontSize:10.5, color:"var(--text-muted)", marginBottom:8, display:"flex", alignItems:"center", gap:5 }}>
+    </div>
 
-                                <span>Due:</span>
-
-                                <strong style={{ color:"var(--text-main)", fontWeight:600 }}>{formatDateLabel(toDateKey(quest.due_date))}</strong>
-
-                              </div>
-
-                            )}
-
-
-
-                            <div style={{ display:"flex", flexDirection:"column", gap:4, marginBottom:10, background:"var(--bg-note-box)", padding:"6px 8px", borderRadius:6 }}>
-
-                              <AutoGrowTextarea
-
-                                value={quest.note || ""}
-
-                                onChange={e => setQuestNote(quest.id, e.target.value)}
-
-                                onBlur={() => syncNoteOnBlur(quest)}
-
-                                placeholder="Add note..."
-
-                              />
-
-                            </div>
-
-
-
-                            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-
-                              <ColorPicker currentColor={quest.color} onChange={color => setQuestColor(quest.id, color)} />
-
-                              {quest.status === "done" && <span style={{ fontSize:11, color:"var(--green)", fontWeight:600 }}>✓ Done</span>}
-
-                              {quest.status === "in-progress" && (
-
-                                <span style={{ fontFamily:"monospace", fontSize:11, color:"var(--green)", fontWeight:600 }}>
-
-                                  {formatTime(quest.time)}
-
-                                </span>
-
-                              )}
-
-                            </div>
-
-                          </div>
-
-                        );
-
-                      })}
-
-
-
-                      {cards.length > 0 && col.id !== "in-progress" && col.id !== "done" && (
-
-                        <div style={{ textAlign:"center", marginTop:4 }}>
-
-                          <button onClick={() => openAddModal(col.id)} style={{ background:"none", border:"none", color:"var(--text-muted)", fontSize:20, cursor:"pointer" }}>+</button>
-
-                        </div>
-
-                      )}
-
-                    </div>
-
-                  </div>
-
-                );
-
-              })}
-
-            </div>
-
-          )}
-
-        </div>
-
-
-
-        {/* ── Sidebar toggle ── */}
-
-        <button
-
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-
-          title={sidebarOpen ? "Sembunyikan sidebar" : "Tampilkan sidebar"}
-
-          style={{
-
-            position:"absolute", top:"50%",
-
-            right: sidebarOpen ? "240px" : "0px",
-
-            transform:"translate(50%, -50%)",
-
-            width:30, height:30, borderRadius:"50%",
-
-            border:"1px solid var(--border)", background:"#ffffff",
-
-            color:"#667eea", cursor:"pointer",
-
-            display:"flex", alignItems:"center", justifyContent:"center",
-
-            fontSize:12, fontWeight:700,
-
-            boxShadow:"0 3px 8px rgba(0,0,0,0.15)",
-
-            zIndex:99, transition:"right 0.25s ease",
-
-          }}
-
-        >
-
-          {sidebarOpen ? "▶" : "◀"}
-
-        </button>
-
-
-
-        {/* ── Right Sidebar ── */}
-
-        <div style={{
-
-          width: sidebarOpen ? 240 : 0,
-
-          borderLeft: sidebarOpen ? "1px solid var(--border)" : "none",
-
-          background:"var(--sidebar-surface)",
-
-          display:"flex", flexDirection:"column",
-
-          overflowY:"auto", flexShrink:0,
-
-          backdropFilter:"blur(12px)",
-
-          transition:"width 0.25s ease",
-
-          overflow:"hidden",
-
-        }}>
-
-          {sidebarOpen && (
-
-            <>
-
-              <SideSection title="Task">
-
-                {quests.filter(q => q.status === "in-progress").length === 0 ? (
-
-                  <div style={{ padding:"12px 14px" }}>
-
-                    <div style={{ fontWeight:500, fontSize:12, color:"var(--text-muted)", whiteSpace:"normal" }}>Tidak ada tugas yang sedang dikerjakan</div>
-
-                  </div>
-
-                ) : (
-
-                  <div style={{ padding:"6px 12px" }}>
-
-                    {quests.filter(q => q.status === "in-progress").map(q => (
-
-                      <div key={q.id} style={{
-
-                        padding:"10px", borderRadius:8,
-
-                        background: q.color || "var(--bg-timer)",
-
-                        border: `0.5px solid ${CARD_COLORS.find(c=>c.bg===q.color)?.border || "var(--border)"}`,
-
-                        marginBottom:8, fontSize:12, boxShadow:"0 1px 3px var(--shadow)",
-
-                      }}>
-
-                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:4, marginBottom:4 }}>
-
-                          <div style={{ fontWeight:600, color:"var(--text-main)", fontSize:12, wordBreak:"break-word", whiteSpace:"normal" }}>{q.title}</div>
-
-                          {<span onClick={() => deleteQuest(q.id)} style={{ cursor:"pointer", color:"var(--text-muted)", fontSize:11, opacity:0.6 }}>✕</span>}
-
-                        </div>
-
-                        {q.note && <div style={{ fontSize:11, color:"var(--text-muted)", marginBottom:6, wordBreak:"break-word", lineHeight:"1.4", whiteSpace:"pre-wrap" }}>{q.note}</div>}
-
-                        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginTop:4 }}>
-
-                          <span style={{ fontFamily:"monospace", color: q.isRunning ? "var(--green)" : "var(--text-muted)", fontWeight: q.isRunning ? 700 : 400, fontSize:12 }}>
-
-                            {formatTime(q.time)}
-
-                          </span>
-
-                          <button onClick={() => toggleTimer(q.id)} style={{
-
-                            background: q.isRunning ? "var(--amber-bg)" : "var(--green-bg)",
-
-                            color: q.isRunning ? "var(--amber)" : "var(--green)",
-
-                            border: `0.5px solid ${q.isRunning ? "var(--amber)" : "var(--green)"}`,
-
-                            borderRadius:5, padding:"2px 9px", cursor:"pointer", fontSize:12,
-
-                          }}>
-
-                            {q.isRunning ? "⏸" : "▶"}
-
-                          </button>
-
-                        </div>
-
-                      </div>
-
-                    ))}
-
-                  </div>
-
-                )}
-
-              </SideSection>
-
-
-
-              <SideSection title="Schedule"><MiniCalendar quests={quests} /></SideSection>
-
-
-
-              <SideSection title="Completed Tasks Log">
-
-                <div style={{ padding:"12px 14px" }}>
-
-                  {quests.filter(q => q.status === "done").length === 0 ? (
-
-                    <p style={{ fontSize:12, color:"var(--text-muted)", margin:0, lineHeight:1.5, whiteSpace:"normal" }}>
-
-                      Kartu yang sudah selesai akan tampil di sini.
-
-                    </p>
-
-                  ) : (
-
-                    quests.filter(q => q.status === "done").map(q => (
-
-                      <div key={q.id} style={{ marginBottom:8, padding:"8px", borderRadius:6, background: q.color || "var(--bg-timer)", border:`0.5px solid ${CARD_COLORS.find(c=>c.bg===q.color)?.border || "var(--border)"}` }}>
-
-                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:4 }}>
-
-                          <div style={{ color:"var(--text-main)", fontSize:12, fontWeight:500, wordBreak:"break-word", whiteSpace:"normal" }}>{q.title}</div>
-
-                          {<span onClick={() => deleteQuest(q.id)} style={{ cursor:"pointer", color:"var(--text-muted)", fontSize:11, opacity:0.6 }}>✕</span>}
-
-                        </div>
-
-                        {q.note && <div style={{ fontSize:11, color:"var(--text-muted)", fontStyle:"italic", marginTop:2, whiteSpace:"pre-wrap" }}>"{q.note}"</div>}
-
-                        <div style={{ color:"var(--text-muted)", fontSize:11, marginTop:4, fontFamily:"monospace" }}>{formatTime(q.time)} finish</div>
-
-                      </div>
-
-                    ))
-
-                  )}
-
-                </div>
-
-              </SideSection>
-
-            </>
-
-          )}
-
-        </div>
-
-      </div>
-
-
-
-      <style>{`
-
-        :root {
-
-          --bg-surface:       rgba(255,255,255,0.92);
-
-          --sidebar-surface:  rgba(250,250,248,0.88);
-
-          --bg-header:        rgba(255,255,255,0.5);
-
-          --bg-column:        rgba(255,255,255,0.4);
-
-          --bg-column-hover:  rgba(235,245,255,0.55);
-
-          --bg-card:          #ffffff;
-
-          --bg-badge:         rgba(0,0,0,0.06);
-
-          --bg-timer:         #ffffff;
-
-          --bg-note-box:      rgba(0,0,0,0.03);
-
-          --border:           rgba(0,0,0,0.12);
-
-          --border-card:      rgba(0,0,0,0.1);
-
-          --text-main:        #2b2b29;
-
-          --text-muted:       #6e6e6b;
-
-          --accent:           #667eea;
-
-          --shadow:           rgba(0,0,0,0.04);
-
-          --green:            #16a34a; --green-bg: rgba(22,163,74,0.1);
-
-          --amber:            #d97706; --amber-bg: rgba(217,119,6,0.1);
-
-        }
-
-        * { box-sizing: border-box; } body { margin: 0; }
-
-        ::-webkit-scrollbar { width:6px; height:6px; }
-
-        ::-webkit-scrollbar-track { background:transparent; }
-
-        ::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
-
-      `}</style>
-
-    </div>
-
-  );
+  );
 
 }

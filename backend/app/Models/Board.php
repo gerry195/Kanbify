@@ -15,6 +15,8 @@ class Board extends Model
     'category',
     'cover_image',
     'invite_code',
+    'background',
+    'background_image',
 ];
 
     public function owner()
@@ -37,6 +39,11 @@ class Board extends Model
     public function tasks()
     {
         return $this->hasMany(Task::class);
+    }
+
+    public function files()
+    {
+        return $this->hasMany(BoardFile::class);
     }
 
     /** Role of a given user on this board, or null if not a member. */

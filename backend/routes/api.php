@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BoardController;
 use App\Http\Controllers\Api\BoardMemberController;
 use App\Http\Controllers\Api\BoardFileController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\StatsController;
 use App\Http\Controllers\Api\TaskController;
 use App\Http\Controllers\Api\UserController;
@@ -47,4 +48,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy']);
 
     Route::get('/stats', [StatsController::class, 'index']);
+
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::put('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+    Route::put('/notifications/{id}/read', [NotificationController::class, 'markRead'])->whereNumber('id');
 });

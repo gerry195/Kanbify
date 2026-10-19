@@ -1,0 +1,347 @@
+/* =========================================================
+   KANBIFY UI TOKENS + SHARED CLASSES
+   Dipakai oleh BoardCard, Semua Board, Statistik, Kalender,
+   dan Pengaturan. Halaman lain tetap memakai gaya inline.
+   ========================================================= */
+
+:root {
+  --k-orange: #f97316;
+  --k-orange-deep: #ea580c;
+  --k-orange-soft: #fff1e6;
+  --k-ink: #1b1a17;
+  --k-ink-2: #45433d;
+  --k-muted: #8c887e;
+  --k-faint: #b5b1a6;
+  --k-line: #e8e4d9;
+  --k-line-soft: #f0ede4;
+  --k-bg: #f4f3ee;
+  --k-card: #ffffff;
+  --k-green: #2f9e5f;
+  --k-red: #d6453d;
+  --k-blue: #3b73d8;
+  --k-amber: #d9922b;
+
+  --k-font-display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+  --k-font-body: 'Instrument Sans', 'Segoe UI', system-ui, sans-serif;
+}
+
+.k-page {
+  font-family: var(--k-font-body);
+  color: var(--k-ink);
+  background: var(--k-bg);
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.k-display {
+  font-family: var(--k-font-display);
+  letter-spacing: -0.02em;
+}
+
+.k-num {
+  font-family: var(--k-font-display);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+.k-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--k-muted);
+}
+
+/* ---------- Buttons ---------- */
+
+.k-btn {
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 15px;
+  border-radius: 10px;
+  border: 1px solid var(--k-line);
+  background: var(--k-card);
+  color: var(--k-ink-2);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.k-btn:hover { background: #faf9f5; border-color: #d9d4c6; }
+.k-btn:active { transform: translateY(1px); }
+
+.k-btn-primary {
+  background: var(--k-orange);
+  border-color: var(--k-orange);
+  color: #fff;
+  box-shadow: 0 5px 12px rgba(249, 115, 22, 0.22);
+}
+.k-btn-primary:hover { background: var(--k-orange-deep); border-color: var(--k-orange-deep); }
+
+/* ---------- Board card ---------- */
+
+.k-board {
+  position: relative;
+  background: var(--k-card);
+  border: 1px solid var(--k-line);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  box-shadow: 0 1px 2px rgba(30, 25, 10, 0.04);
+}
+.k-board:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 26px -10px rgba(30, 25, 10, 0.2);
+}
+
+.k-board-cover {
+  position: relative;
+  height: 142px;
+  background: #e5e1d6;
+  overflow: hidden;
+}
+.k-board-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+.k-board:hover .k-board-cover img { transform: scale(1.04); }
+.k-board-cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.38) 0%, rgba(0, 0, 0, 0) 42%);
+  pointer-events: none;
+}
+
+.k-board-cat {
+  position: absolute;
+  top: 11px;
+  left: 11px;
+  z-index: 2;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border-radius: 999px;
+}
+
+.k-board-actions {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  z-index: 2;
+  display: flex;
+  gap: 6px;
+}
+
+.k-glass {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--k-ink-2);
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+.k-glass:hover { background: #fff; color: var(--k-orange-deep); }
+.k-glass.danger:hover { background: #fff1f0; color: var(--k-red); }
+.k-glass.gold { color: #c98a06; }
+.k-glass.gold:hover { background: #fff7e0; color: #a96f00; }
+.k-glass:active { transform: scale(0.94); }
+
+.k-star {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--k-faint);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, transform 0.12s;
+}
+.k-star:hover { background: #fff6e5; color: var(--k-amber); }
+.k-star.on { color: #f5a50b; }
+.k-star:active { transform: scale(0.88); }
+
+.k-bar {
+  height: 5px;
+  border-radius: 4px;
+  background: var(--k-line-soft);
+  overflow: hidden;
+}
+.k-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.35s ease;
+}
+
+/* ---------- Chips & filters ---------- */
+
+.k-chip {
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--k-line);
+  background: var(--k-card);
+  color: var(--k-ink-2);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.k-chip:hover { border-color: #d3cdbd; }
+.k-chip.on {
+  background: var(--k-ink);
+  border-color: var(--k-ink);
+  color: #fff;
+}
+
+.k-input {
+  font-family: inherit;
+  font-size: 13px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--k-line);
+  background: #fff;
+  color: var(--k-ink);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.k-input:focus {
+  border-color: var(--k-orange);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.14);
+}
+
+/* ---------- Panels ---------- */
+
+.k-panel {
+  background: var(--k-card);
+  border: 1px solid var(--k-line);
+  border-radius: 16px;
+  box-sizing: border-box;
+}
+
+/* ---------- Stats ---------- */
+
+.k-stack {
+  display: flex;
+  height: 14px;
+  border-radius: 7px;
+  overflow: hidden;
+  gap: 2px;
+  background: var(--k-line-soft);
+}
+.k-stack > span {
+  display: block;
+  height: 100%;
+  min-width: 0;
+  transition: flex-grow 0.4s ease;
+}
+
+.k-row-hover { transition: background 0.12s; }
+.k-row-hover:hover { background: #faf8f2; }
+
+.k-tab {
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 1px solid var(--k-line);
+  background: var(--k-card);
+  border-radius: 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--k-ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, background 0.15s;
+}
+.k-tab:hover { border-color: #d3cdbd; }
+.k-tab.on {
+  border-color: var(--k-orange);
+  background: var(--k-orange-soft);
+  color: var(--k-orange-deep);
+}
+.k-tab small {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--k-muted);
+}
+.k-tab.on small { color: var(--k-orange-deep); }
+
+/* ---------- Calendar ---------- */
+
+.k-cal-cell {
+  position: relative;
+  min-height: 104px;
+  padding: 8px 8px 6px;
+  border: 0;
+  border-right: 1px solid var(--k-line-soft);
+  border-bottom: 1px solid var(--k-line-soft);
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: background 0.12s;
+}
+.k-cal-cell:hover { background: #fcfbf7; }
+.k-cal-cell.out { background: #faf9f5; cursor: default; }
+.k-cal-cell.sel { background: var(--k-orange-soft); box-shadow: inset 0 0 0 2px var(--k-orange); }
+
+.k-cal-pill {
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  padding: 3px 6px;
+  border-radius: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-left: 3px solid;
+}
+
+/* ---------- Settings ---------- */
+
+.k-field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--k-ink-2);
+  margin-bottom: 6px;
+}
+
+@media (max-width: 960px) {
+  .k-split { grid-template-columns: minmax(0, 1fr) !important; }
+}
+@media (max-width: 640px) {
+  .k-cal-cell { min-height: 64px; padding: 5px; }
+  .k-cal-pill { display: none; }
+}

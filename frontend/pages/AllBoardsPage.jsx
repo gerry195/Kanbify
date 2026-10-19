@@ -1,37 +1,22 @@
-import React, {
-  useState,
-  useEffect,
-  useMemo
-} from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 import { api } from '../utils/api';
 import BoardCard from '../components/BoardCard';
+import CreateBoardModal from '../components/CreateBoardModal';
+import NotificationBell from '../components/NotificationBell';
 
-import {
-  Bell,
-  TriangleAlert,
-  Search
-} from 'lucide-react';
+import { TriangleAlert, Search, Plus } from 'lucide-react';
 
-const CATEGORIES = [
-  'Semua',
-  'Umum',
-  'Desain',
-  'Pemasaran',
-  'Pengembangan'
-];
+const CATEGORIES = ['Semua', 'Umum', 'Desain', 'Pemasaran', 'Pengembangan'];
 
-export default function AllBoardsPage({
-  onSelectBoard
-}) {
+export default function AllBoardsPage({ onSelectBoard, onOpenStats }) {
   const [boards, setBoards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeCategory, setActiveCategory] =
-    useState('Semua');
+  const [activeCategory, setActiveCategory] = useState('Semua');
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] =
-    useState('updated');
+  const [sortBy, setSortBy] = useState('updated');
+  const [showCreate, setShowCreate] = useState(false);
 
   useEffect(() => {
     load();
@@ -40,78 +25,58 @@ export default function AllBoardsPage({
   const load = async () => {
     try {
       setLoading(true);
-
-      const data = await api.getBoards();
-
-      setBoards(data);
+      setError('');
+      setBoards(await api.getBoards());
     } catch (err) {
-      setError(
-        err.message || 'Gagal memuat board'
-      );
+      setError(err.message || 'Gagal memuat board');
     } finally {
       setLoading(false);
     }
   };
 
+  const counts = useMemo(() => {
+    const map = { Semua: boards.length };
+    boards.forEach((b) => {
+      const c = b.category || 'Umum';
+      map[c] = (map[c] || 0) + 1;
+    });
+    return map;
+  }, [boards]);
+
   const filtered = useMemo(() => {
     let list = [...boards];
 
     if (activeCategory !== 'Semua') {
-      list = list.filter(
-        (b) =>
-          (b.category || 'Umum') ===
-          activeCategory
-      );
+      list = list.filter((b) => (b.category || 'Umum') === activeCategory);
     }
 
     if (search.trim()) {
       const q = search.trim().toLowerCase();
-
-      list = list.filter((b) =>
-        b.name.toLowerCase().includes(q)
-      );
+      list = list.filter((b) => b.name.toLowerCase().includes(q));
     }
+
+    const pct = (b) => (b.total_tasks > 0 ? b.done_tasks / b.total_tasks : 0);
 
     if (sortBy === 'updated') {
       list.sort(
         (a, b) =>
-          new Date(
-            b.updated_at || b.created_at
-          ) -
-          new Date(
-            a.updated_at || a.created_at
-          )
+          new Date(b.updated_at || b.created_at) -
+          new Date(a.updated_at || a.created_at)
       );
     } else if (sortBy === 'name') {
-      list.sort((a, b) =>
-        a.name.localeCompare(b.name)
-      );
+      list.sort((a, b) => a.name.localeCompare(b.name));
     } else if (sortBy === 'progress') {
-      const pct = (b) =>
-        b.total_tasks > 0
-          ? b.done_tasks / b.total_tasks
-          : 0;
-
       list.sort((a, b) => pct(b) - pct(a));
     }
 
     return list;
-  }, [
-    boards,
-    activeCategory,
-    search,
-    sortBy
-  ]);
+  }, [boards, activeCategory, search, sortBy]);
 
   if (loading) {
     return (
       <div
-        style={{
-          padding: 40,
-          textAlign: 'center',
-          color: '#8a8a86',
-          fontFamily: 'system-ui'
-        }}
+        className="k-page"
+        style={{ padding: 40, textAlign: 'center', color: 'var(--k-muted)' }}
       >
         Memuat board...
       </div>
@@ -119,279 +84,208 @@ export default function AllBoardsPage({
   }
 
   return (
-    <div
-      style={{
-        padding: '28px 34px',
-        maxWidth: 1200,
-        margin: '0 auto',
-        fontFamily: 'system-ui, sans-serif'
-      }}
-    >
-      {/* Breadcrumb */}
-      <div
-        style={{
-          fontSize: 11.5,
-          color: '#a8a8a3',
-          marginBottom: 4
-        }}
-      >
-        Home{' '}
-        <span style={{ color: '#c7c7c1' }}>
-          ›
-        </span>{' '}
-        <span
-          style={{
-            color: '#f97316',
-            fontWeight: 600
-          }}
-        >
-          Semua Board
-        </span>
-      </div>
-
-      {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: 22
-        }}
-      >
-        <h1
-          style={{
-            fontSize: 24,
-            fontWeight: 700,
-            margin: 0,
-            color: '#1e1e1e'
-          }}
-        >
-          Semua Board Anda
-        </h1>
-
-        <button
-          style={{
-            width: 38,
-            height: 38,
-            borderRadius: '50%',
-            border: '1px solid #ece9e1',
-            background: '#fff',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-          title="Notifikasi"
-        >
-          <Bell
-            size={16}
-            strokeWidth={2}
-            color="#f97316"
-          />
-        </button>
-      </div>
-
-      {/* Error */}
-      {error && (
+    <div className="k-page" style={{ padding: '26px 34px 50px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <div
-          style={{
-            backgroundColor: '#fef2f2',
-            color: '#b91c1c',
-            padding: 12,
-            borderRadius: 8,
-            marginBottom: 20,
-            fontSize: 13,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8
-          }}
+          style={{ fontSize: 11.5, color: 'var(--k-faint)', marginBottom: 5 }}
         >
-          <TriangleAlert size={16} />
-          {error}
+          Home <span style={{ margin: '0 3px' }}>›</span>
+          <span style={{ color: 'var(--k-orange)', fontWeight: 600 }}>
+            Semua Board
+          </span>
         </div>
-      )}
 
-      {/* Filter + search + sort */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 16,
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 24
-        }}
-      >
-        {/* Categories */}
+        {/* HEADER */}
+
         <div
           style={{
             display: 'flex',
-            gap: 6,
-            flexWrap: 'wrap'
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 16,
+            flexWrap: 'wrap',
+            marginBottom: 6
           }}
         >
-          {CATEGORIES.map((cat) => {
-            const active =
-              activeCategory === cat;
+          <h1
+            className="k-display"
+            style={{ margin: 0, fontSize: 28, fontWeight: 600 }}
+          >
+            Semua Board Anda
+          </h1>
 
-            return (
-              <button
-                key={cat}
-                onClick={() =>
-                  setActiveCategory(cat)
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <NotificationBell
+              onOpenBoard={(id) => {
+                const b = boards.find((x) => x.id === id);
+                if (b && onSelectBoard) {
+                  onSelectBoard(b.id, b.name, b.role);
                 }
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: 999,
-                  border: active
-                    ? 'none'
-                    : '1px solid #ece9e1',
-                  background: active
-                    ? '#f97316'
-                    : '#fff',
-                  color: active
-                    ? '#fff'
-                    : '#4b4b47',
-                  fontSize: 12.5,
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
-                {cat}
-              </button>
-            );
-          })}
+              }}
+            />
+
+            <button
+              type="button"
+              className="k-btn k-btn-primary"
+              onClick={() => setShowCreate(true)}
+            >
+              <Plus size={16} strokeWidth={2.2} />
+              Buat Board Baru
+            </button>
+          </div>
         </div>
 
-        {/* Search + sort */}
-        <div
+        <p
           style={{
-            display: 'flex',
-            gap: 10
+            margin: '0 0 22px',
+            fontSize: 13,
+            color: 'var(--k-muted)'
           }}
         >
+          {boards.length} board. Pantau progres, buka statistik, atau
+          rapikan yang sudah tidak terpakai.
+        </p>
+
+        {error && (
           <div
             style={{
-              position: 'relative',
-              width: 190
+              background: '#fff1f0',
+              border: '1px solid #fbd0cc',
+              color: '#b42318',
+              padding: 12,
+              borderRadius: 10,
+              marginBottom: 20,
+              fontSize: 13,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8
             }}
           >
-            <Search
-              size={15}
-              color="#9a9a94"
-              strokeWidth={2}
-              style={{
-                position: 'absolute',
-                left: 12,
-                top: '50%',
-                transform:
-                  'translateY(-50%)',
-                pointerEvents: 'none'
-              }}
-            />
+            <TriangleAlert size={16} />
+            {error}
+          </div>
+        )}
 
-            <input
-              value={search}
-              onChange={(e) =>
-                setSearch(e.target.value)
-              }
-              placeholder="Cari board..."
-              style={{
-                padding: '9px 14px 9px 34px',
-                borderRadius: 10,
-                border:
-                  '1px solid #ece9e1',
-                fontSize: 12.5,
-                outline: 'none',
-                width: '100%',
-                boxSizing: 'border-box'
-              }}
-            />
+        {/* FILTER + SEARCH + SORT */}
+
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 14,
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 22
+          }}
+        >
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                className={`k-chip${activeCategory === cat ? ' on' : ''}`}
+                onClick={() => setActiveCategory(cat)}
+              >
+                {cat}
+                {counts[cat] ? (
+                  <span style={{ opacity: 0.55, marginLeft: 6 }}>
+                    {counts[cat]}
+                  </span>
+                ) : null}
+              </button>
+            ))}
           </div>
 
-          <select
-            value={sortBy}
-            onChange={(e) =>
-              setSortBy(e.target.value)
-            }
+          <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ position: 'relative', width: 200 }}>
+              <Search
+                size={15}
+                color="var(--k-muted)"
+                style={{
+                  position: 'absolute',
+                  left: 12,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  pointerEvents: 'none'
+                }}
+              />
+              <input
+                className="k-input"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Cari board..."
+                style={{ paddingLeft: 34 }}
+              />
+            </div>
+
+            <select
+              className="k-input"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              style={{ width: 'auto' }}
+            >
+              <option value="updated">Terakhir diupdate</option>
+              <option value="name">Nama A-Z</option>
+              <option value="progress">Progres tertinggi</option>
+            </select>
+          </div>
+        </div>
+
+        {/* GRID */}
+
+        {filtered.length === 0 ? (
+          <div
             style={{
-              padding: '9px 12px',
-              borderRadius: 10,
-              border:
-                '1px solid #ece9e1',
-              fontSize: 12.5,
-              outline: 'none',
-              background: '#fff'
+              textAlign: 'center',
+              padding: '56px 20px',
+              border: '1.5px dashed #d9d4c6',
+              borderRadius: 16,
+              color: 'var(--k-muted)'
             }}
           >
-            <option value="updated">
-              Terakhir diupdate
-            </option>
-
-            <option value="name">
-              Nama A-Z
-            </option>
-
-            <option value="progress">
-              Progres tertinggi
-            </option>
-          </select>
-        </div>
+            <p style={{ fontSize: 14.5, margin: '0 0 14px' }}>
+              {boards.length === 0
+                ? 'Kamu belum punya board.'
+                : 'Tidak ada board yang cocok dengan filter ini.'}
+            </p>
+            {boards.length === 0 && (
+              <button
+                type="button"
+                className="k-btn k-btn-primary"
+                onClick={() => setShowCreate(true)}
+              >
+                <Plus size={16} strokeWidth={2.2} />
+                Buat board pertama
+              </button>
+            )}
+          </div>
+        ) : (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(285px, 1fr))',
+              gap: 20,
+              alignItems: 'start'
+            }}
+          >
+            {filtered.map((board) => (
+              <BoardCard
+                key={board.id}
+                board={board}
+                onOpen={onSelectBoard}
+                onChanged={load}
+                onOpenStats={onOpenStats}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Description */}
-      <p
-        style={{
-          fontSize: 12.5,
-          color: '#a8a8a3',
-          margin: '-8px 0 18px 0'
-        }}
-      >
-        Kelola, monitor, dan tinjau progres
-        seluruh sprint board tim Anda secara
-        komprehensif.
-      </p>
-
-      {/* Boards */}
-      {filtered.length === 0 ? (
-        <div
-          style={{
-            textAlign: 'center',
-            padding: '60px 20px',
-            border:
-              '2px dashed #ece9e1',
-            borderRadius: 16,
-            color: '#8a8a86'
-          }}
-        >
-          <p
-            style={{
-              fontSize: 15,
-              margin: 0
-            }}
-          >
-            Tidak ada board yang cocok
-            dengan filter ini.
-          </p>
-        </div>
-      ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns:
-              'repeat(auto-fill, minmax(270px, 1fr))',
-            gap: 20
-          }}
-        >
-          {filtered.map((board) => (
-            <BoardCard
-              key={board.id}
-              board={board}
-              onOpen={onSelectBoard}
-              onChanged={load}
-            />
-          ))}
-        </div>
+      {showCreate && (
+        <CreateBoardModal
+          onClose={() => setShowCreate(false)}
+          onCreated={load}
+        />
       )}
     </div>
   );

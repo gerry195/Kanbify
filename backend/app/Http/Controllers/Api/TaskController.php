@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Board;
 use App\Models\Task;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -160,6 +161,10 @@ class TaskController extends Controller
 
         $newStatus = $data['status'] ?? $task->status;
 
+        // Snapshot untuk notifikasi: apa yang berubah dibandingkan sebelumnya.
+        $oldStatus    = $task->status;
+        $changedFields = $this->changedFields($task, $data, $assigneeIds);
+
         $running = array_key_exists('isRunning', $data)
             ? $data['isRunning']
             : ($data['is_running'] ?? $task->is_running);
@@ -215,10 +220,62 @@ class TaskController extends Controller
             }
         });
 
+        $fresh = $task->fresh();
+
+        // Notifikasi ke anggota lain. Timer (time/is_running) sengaja diabaikan
+        // karena berubah terus saat tugas dikerjakan.
+        if ($oldStatus !== $fresh->status) {
+            NotificationService::taskStatusChanged(
+                $board, $request->user(), $fresh->id, $fresh->title, $oldStatus, $fresh->status
+            );
+        }
+
+        NotificationService::taskUpdated(
+            $board, $request->user(), $fresh->id, $fresh->title, $changedFields
+        );
+
         return response()->json([
             'success' => true,
-            'task' => $task->fresh()->load('assignees'),
+            'task' => $fresh->load('assignees'),
         ]);
+    }
+
+    /**
+     * Daftar bidang yang benar-benar berubah (untuk notifikasi).
+     */
+    private function changedFields(Task $task, array $data, ?array $assigneeIds): array
+    {
+        $changed = [];
+
+        foreach (['title', 'description', 'priority'] as $field) {
+            if (array_key_exists($field, $data) && (string) $data[$field] !== (string) $task->{$field}) {
+                $changed[] = $field;
+            }
+        }
+
+        foreach (['due_date', 'start_date'] as $field) {
+            if (! array_key_exists($field, $data)) {
+                continue;
+            }
+
+            $new = $data[$field] ? date('Y-m-d', strtotime($data[$field])) : null;
+            $old = $task->{$field}?->format('Y-m-d');
+
+            if ($new !== $old) {
+                $changed[] = $field;
+            }
+        }
+
+        if ($assigneeIds !== null) {
+            $old = $task->assignees()->pluck('users.id')->map(fn ($i) => (int) $i)->sort()->values()->all();
+            $new = collect($assigneeIds)->map(fn ($i) => (int) $i)->sort()->values()->all();
+
+            if ($old !== $new) {
+                $changed[] = 'assignees';
+            }
+        }
+
+        return $changed;
     }
 
     /**
@@ -233,7 +290,11 @@ class TaskController extends Controller
             return response()->json(['error' => 'Forbidden'], 403);
         }
 
+        $title = $task->title;
+
         $task->delete();
+
+        NotificationService::taskDeleted($board, $request->user(), $title);
 
         return response()->json(['success' => true]);
     }

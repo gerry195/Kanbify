@@ -1,398 +1,323 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { api } from '../utils/api';
 
-import {
-  ClipboardList,
-  CircleCheck,
-  Clock3,
-  FilePenLine,
-  Package,
-  CalendarDays,
-  Timer,
-  LayoutGrid,
-  TrendingUp,
-  TriangleAlert
-} from 'lucide-react';
+import { TriangleAlert, ArrowUpRight, Clock3, CircleAlert } from 'lucide-react';
+
+/* =========================================================
+   KONSTANTA
+   ========================================================= */
+
+const STATUSES = [
+  { id: 'done', label: 'Done', color: '#2f9e5f' },
+  { id: 'in-progress', label: 'On Progress', color: '#f97316' },
+  { id: 'todo', label: 'To Do', color: '#3b73d8' },
+  { id: 'backlog', label: 'Backlog', color: '#b9b5a8' }
+];
+
+const PRIORITIES = [
+  { id: 'sangat-tinggi', label: 'Sangat tinggi', color: '#b42318' },
+  { id: 'tinggi', label: 'Tinggi', color: '#e0523f' },
+  { id: 'sedang', label: 'Sedang', color: '#d9922b' },
+  { id: 'rendah', label: 'Rendah', color: '#5b8bd9' },
+  { id: 'sangat-rendah', label: 'Sangat rendah', color: '#6fae8a' }
+];
+
+/* =========================================================
+   HELPER
+   ========================================================= */
 
 function formatTime(seconds) {
   const s = Number(seconds) || 0;
-
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
 
-  if (h > 0) {
-    return `${h}j ${m}m`;
-  }
-
-  return `${m}m ${s % 60}d`;
+  if (h > 0) return `${h}j ${m}m`;
+  if (m > 0) return `${m}m`;
+  return s > 0 ? `${s}d` : '0m';
 }
 
+function dayKey(value) {
+  const m = String(value || '').match(/^(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : null;
+}
+
+function todayKey() {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
+function daysBetween(fromKey, toKey) {
+  const a = new Date(`${fromKey}T00:00:00`);
+  const b = new Date(`${toKey}T00:00:00`);
+  return Math.round((b - a) / 86400000);
+}
+
+function formatDay(key) {
+  return new Date(`${key}T00:00:00`).toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'short'
+  });
+}
+
+function personName(p) {
+  return p.fullname || p.name || p.username || `User ${p.id ?? p.user_id}`;
+}
+
+function initials(name) {
+  return name
+    .split(/\s+/)
+    .map((p) => p[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
 
 /* =========================================================
-   STAT CARD
+   KOMPONEN KECIL
    ========================================================= */
 
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  iconColor = '#f97316',
-  iconBackground = '#fff1e7',
-  smallText
-}) {
+function Panel({ title, hint, children, style }) {
   return (
-    <div
-      style={{
-        background: '#ffffff',
-        border: '1px solid #e8e5df',
-        borderRadius: 14,
-        padding: '16px 18px',
-        minHeight: 106,
-        boxSizing: 'border-box',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        flex: '1 1 170px'
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}
-      >
-        <div
-          style={{
-            width: 34,
-            height: 34,
-            borderRadius: 10,
-            background: iconBackground,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
+    <section className="k-panel" style={{ padding: '20px 22px', ...style }}>
+      <div style={{ marginBottom: 16 }}>
+        <h2
+          className="k-display"
+          style={{ margin: 0, fontSize: 16, fontWeight: 600 }}
         >
-          <Icon
-            size={18}
-            strokeWidth={1.8}
-            color={iconColor}
-          />
-        </div>
-
-        <span
-          style={{
-            fontSize: 10,
-            color: '#9a9892',
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '.4px'
-          }}
-        >
-          {label}
-        </span>
-      </div>
-
-      <div>
-        <div
-          style={{
-            fontSize: 25,
-            fontWeight: 700,
-            lineHeight: 1,
-            color: '#171717',
-            marginBottom: 5
-          }}
-        >
-          {value}
-        </div>
-
-        {smallText && (
-          <div
-            style={{
-              fontSize: 11,
-              color: '#9a9892'
-            }}
-          >
-            {smallText}
-          </div>
+          {title}
+        </h2>
+        {hint && (
+          <p style={{ margin: '3px 0 0', fontSize: 12, color: 'var(--k-muted)' }}>
+            {hint}
+          </p>
         )}
       </div>
-    </div>
+      {children}
+    </section>
   );
 }
 
-
-/* =========================================================
-   BOARD PROGRESS
-   ========================================================= */
-
-function BoardProgress({ board }) {
-  const total = Number(board.total) || 0;
-  const done = Number(board.done) || 0;
-
-  const percentage =
-    total > 0
-      ? Math.round((done / total) * 100)
-      : 0;
-
+function Empty({ children }) {
   return (
     <div
       style={{
-        marginBottom: 18
+        padding: '22px 0',
+        textAlign: 'center',
+        fontSize: 12.5,
+        color: 'var(--k-muted)'
       }}
     >
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 7
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            minWidth: 0
-          }}
-        >
-          <div
-            style={{
-              width: 26,
-              height: 26,
-              borderRadius: 7,
-              background: '#fff1e7',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}
-          >
-            <LayoutGrid
-              size={13}
-              color="#f97316"
-              strokeWidth={2}
-            />
-          </div>
-
-          <span
-            style={{
-              fontSize: 12.5,
-              fontWeight: 600,
-              color: '#292929',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            {board.name}
-          </span>
-        </div>
-
-        <span
-          style={{
-            fontSize: 11,
-            color: '#8f8c85',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          {done}/{total}
-        </span>
-      </div>
-
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10
-        }}
-      >
-        <div
-          style={{
-            height: 7,
-            flex: 1,
-            borderRadius: 10,
-            background: '#ebe9e4',
-            overflow: 'hidden'
-          }}
-        >
-          <div
-            style={{
-              width: `${percentage}%`,
-              height: '100%',
-              borderRadius: 10,
-              background: '#f97316',
-              transition: 'width .3s ease'
-            }}
-          />
-        </div>
-
-        <span
-          style={{
-            width: 32,
-            textAlign: 'right',
-            fontSize: 11,
-            fontWeight: 600,
-            color: '#66635d'
-          }}
-        >
-          {percentage}%
-        </span>
-      </div>
+      {children}
     </div>
   );
 }
 
-
-/* =========================================================
-   RECENT COMPLETED ITEM
-   ========================================================= */
-
-function RecentTask({ task }) {
+function Avatar({ name, avatar, size = 28 }) {
   return (
-    <div
+    <span
+      title={name}
       style={{
-        display: 'flex',
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        overflow: 'hidden',
+        background: '#fde6d3',
+        color: '#b45309',
+        fontSize: size * 0.36,
+        fontWeight: 700,
+        display: 'inline-flex',
         alignItems: 'center',
-        gap: 10,
-        padding: '11px 0',
-        borderBottom: '1px solid #efede8'
+        justifyContent: 'center',
+        flexShrink: 0
       }}
     >
-      <div
-        style={{
-          width: 30,
-          height: 30,
-          borderRadius: 9,
-          background: '#edf8ef',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0
-        }}
-      >
-        <CircleCheck
-          size={16}
-          color="#16a34a"
-          strokeWidth={2}
+      {avatar ? (
+        <img
+          src={avatar}
+          alt=""
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
-      </div>
-
-      <div
-        style={{
-          flex: 1,
-          minWidth: 0
-        }}
-      >
-        <div
-          style={{
-            fontSize: 12.5,
-            fontWeight: 600,
-            color: '#292929',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          {task.title}
-        </div>
-
-        <div
-          style={{
-            fontSize: 10.5,
-            color: '#9a9892',
-            marginTop: 3
-          }}
-        >
-          Tugas selesai
-        </div>
-      </div>
-
-      <span
-        style={{
-          fontSize: 10.5,
-          color: '#9a9892',
-          whiteSpace: 'nowrap'
-        }}
-      >
-        {task.completed_at
-          ? new Date(
-              task.completed_at
-            ).toLocaleDateString('id-ID')
-          : '-'}
-      </span>
-    </div>
+      ) : (
+        initials(name)
+      )}
+    </span>
   );
 }
 
-
 /* =========================================================
-   STATS PAGE
+   HALAMAN
    ========================================================= */
 
-export default function StatsPage() {
-  const [stats, setStats] = useState(null);
+export default function StatsPage({ initialBoardId, onOpenBoard }) {
+  const [boards, setBoards] = useState([]);
+  const [tasksByBoard, setTasksByBoard] = useState({});
+  const [selected, setSelected] = useState(initialBoardId ?? 'all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    api
-      .getStats()
-      .then(setStats)
-      .catch((err) => {
-        setError(
-          err.message ||
-          'Gagal memuat statistik'
+    let cancelled = false;
+
+    (async () => {
+      try {
+        setLoading(true);
+        setError('');
+
+        const list = await api.getBoards();
+        const boardList = Array.isArray(list) ? list : list?.data || [];
+
+        const entries = await Promise.all(
+          boardList.map(async (b) => {
+            try {
+              const tasks = await api.getTasks(b.id);
+              return [b.id, Array.isArray(tasks) ? tasks : []];
+            } catch {
+              return [b.id, []];
+            }
+          })
         );
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+
+        if (cancelled) return;
+
+        setBoards(boardList);
+        setTasksByBoard(Object.fromEntries(entries));
+      } catch (err) {
+        if (!cancelled) setError(err.message || 'Gagal memuat statistik');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  /* =======================================================
-     LOADING
-     ======================================================= */
+  useEffect(() => {
+    setSelected(initialBoardId ?? 'all');
+  }, [initialBoardId]);
+
+  const board = boards.find((b) => b.id === selected) || null;
+
+  /* ------- tugas untuk pilihan aktif ------- */
+
+  const tasks = useMemo(() => {
+    if (selected === 'all') {
+      return boards.flatMap((b) =>
+        (tasksByBoard[b.id] || []).map((t) => ({ ...t, _board: b.name }))
+      );
+    }
+    return (tasksByBoard[selected] || []).map((t) => ({
+      ...t,
+      _board: board?.name
+    }));
+  }, [selected, boards, tasksByBoard, board]);
+
+  /* ------- agregasi ------- */
+
+  const data = useMemo(() => {
+    const today = todayKey();
+    const total = tasks.length;
+
+    const byStatus = Object.fromEntries(STATUSES.map((s) => [s.id, 0]));
+    const byPriority = Object.fromEntries(PRIORITIES.map((p) => [p.id, 0]));
+    const people = new Map();
+    const overdue = [];
+    let seconds = 0;
+
+    const person = (p) => {
+      const key = String(p.id ?? p.user_id ?? personName(p));
+      if (!people.has(key)) {
+        people.set(key, {
+          key,
+          name: personName(p),
+          avatar: p.avatar,
+          total: 0,
+          done: 0
+        });
+      }
+      return people.get(key);
+    };
+
+    let unassigned = { total: 0, done: 0 };
+
+    tasks.forEach((t) => {
+      const status = byStatus[t.status] !== undefined ? t.status : 'backlog';
+      byStatus[status] += 1;
+      seconds += Number(t.time) || 0;
+
+      const isDone = status === 'done';
+
+      if (!isDone) {
+        const pr = byPriority[t.priority] !== undefined ? t.priority : 'sedang';
+        byPriority[pr] += 1;
+
+        const due = dayKey(t.due_date);
+        if (due && due < today) {
+          overdue.push({ ...t, due, late: daysBetween(due, today) });
+        }
+      }
+
+      const assignees = Array.isArray(t.assignees) ? t.assignees : [];
+      if (assignees.length === 0) {
+        unassigned.total += 1;
+        if (isDone) unassigned.done += 1;
+      } else {
+        assignees.forEach((a) => {
+          const row = person(a);
+          row.total += 1;
+          if (isDone) row.done += 1;
+        });
+      }
+    });
+
+    overdue.sort((a, b) => b.late - a.late);
+
+    const topTime = [...tasks]
+      .filter((t) => Number(t.time) > 0)
+      .sort((a, b) => Number(b.time) - Number(a.time))
+      .slice(0, 5);
+
+    return {
+      total,
+      byStatus,
+      byPriority,
+      openCount: total - byStatus.done,
+      pct: total > 0 ? Math.round((byStatus.done / total) * 100) : 0,
+      people: [...people.values()].sort((a, b) => b.total - a.total),
+      unassigned,
+      overdue,
+      seconds,
+      topTime
+    };
+  }, [tasks]);
+
+  /* ------- state awal ------- */
 
   if (loading) {
     return (
-      <div
-        style={{
-          padding: 30,
-          color: '#8f8c85',
-          fontFamily: 'system-ui, sans-serif'
-        }}
-      >
+      <div className="k-page" style={{ padding: 40, color: 'var(--k-muted)' }}>
         Memuat statistik...
       </div>
     );
   }
 
-
-  /* =======================================================
-     ERROR
-     ======================================================= */
-
   if (error) {
     return (
-      <div
-        style={{
-          padding: 30,
-          fontFamily: 'system-ui, sans-serif'
-        }}
-      >
+      <div className="k-page" style={{ padding: 30 }}>
         <div
           style={{
-            maxWidth: 600,
-            background: '#fff5f5',
-            border: '1px solid #f3d0d0',
+            maxWidth: 560,
+            background: '#fff1f0',
+            border: '1px solid #fbd0cc',
             borderRadius: 12,
             padding: 14,
             display: 'flex',
             alignItems: 'center',
             gap: 9,
-            color: '#b91c1c',
+            color: '#b42318',
             fontSize: 13
           }}
         >
@@ -403,75 +328,16 @@ export default function StatsPage() {
     );
   }
 
-
-  const s = stats || {};
-
-  const totalTasks = Number(
-    s.total_tasks || 0
-  );
-
-  const completedTasks = Number(
-    s.completed_tasks || 0
-  );
-
-  const inProgressTasks = Number(
-    s.in_progress_tasks || 0
-  );
-
-  const todoTasks = Number(
-    s.todo_tasks || 0
-  );
-
-  const backlogTasks = Number(
-    s.backlog_tasks || 0
-  );
-
-  const completionRate = Number(
-    s.completion_rate || 0
-  );
-
+  const maxPriority = Math.max(1, ...Object.values(data.byPriority));
+  const maxTime = Math.max(1, ...data.topTime.map((t) => Number(t.time)));
+  const maxLoad = Math.max(1, ...data.people.map((p) => p.total), data.unassigned.total);
 
   return (
-    <div
-      style={{
-        padding: '26px 22px 40px',
-        maxWidth: 1100,
-        margin: '0 auto',
-        boxSizing: 'border-box',
-        fontFamily: 'system-ui, sans-serif',
-        color: '#171717'
-      }}
-    >
-
-      {/* ===================================================
-          HEADER
-          =================================================== */}
-
-      <div
-        style={{
-          marginBottom: 23
-        }}
-      >
-        <div
-          style={{
-            fontSize: 11,
-            color: '#aaa69f',
-            marginBottom: 7
-          }}
-        >
-          Home
-          <span
-            style={{
-              margin: '0 5px'
-            }}
-          >
-            ›
-          </span>
-          <span
-            style={{
-              color: '#f97316'
-            }}
-          >
+    <div className="k-page" style={{ padding: '26px 34px 56px' }}>
+      <div style={{ maxWidth: 1120, margin: '0 auto' }}>
+        <div style={{ fontSize: 11.5, color: 'var(--k-faint)', marginBottom: 5 }}>
+          Home <span style={{ margin: '0 3px' }}>›</span>
+          <span style={{ color: 'var(--k-orange)', fontWeight: 600 }}>
             Statistik Tim
           </span>
         </div>
@@ -479,429 +345,491 @@ export default function StatsPage() {
         <div
           style={{
             display: 'flex',
-            alignItems: 'flex-end',
             justifyContent: 'space-between',
-            gap: 20
+            alignItems: 'flex-end',
+            gap: 16,
+            flexWrap: 'wrap',
+            marginBottom: 18
           }}
         >
           <div>
             <h1
-              style={{
-                margin: 0,
-                fontSize: 26,
-                lineHeight: 1.15,
-                fontWeight: 700,
-                letterSpacing: '-.5px',
-                color: '#171717'
-              }}
+              className="k-display"
+              style={{ margin: 0, fontSize: 28, fontWeight: 600 }}
             >
-              Statistik Tim
+              {board ? board.name : 'Semua board'}
             </h1>
-
-            <p
-              style={{
-                margin: '6px 0 0',
-                fontSize: 12.5,
-                color: '#9a9892'
-              }}
-            >
-              Ringkasan performa tugas di seluruh
-              board Anda.
+            <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--k-muted)' }}>
+              {board
+                ? `Statistik khusus board ${board.category || 'Umum'} ini.`
+                : 'Gabungan seluruh board kamu. Pilih satu board untuk melihat rinciannya.'}
             </p>
           </div>
-        </div>
-      </div>
 
-
-      {/* ===================================================
-          MAIN STATS
-          =================================================== */}
-
-      <div
-        style={{
-          display: 'flex',
-          gap: 14,
-          flexWrap: 'wrap',
-          marginBottom: 22
-        }}
-      >
-        <StatCard
-          label="Task"
-          value={totalTasks}
-          icon={ClipboardList}
-          iconColor="#f97316"
-          iconBackground="#fff1e7"
-          smallText="Total seluruh tugas"
-        />
-
-        <StatCard
-          label="Done"
-          value={completedTasks}
-          icon={CircleCheck}
-          iconColor="#16a34a"
-          iconBackground="#edf8ef"
-          smallText="Tugas selesai"
-        />
-
-        <StatCard
-          label="On Progress"
-          value={inProgressTasks}
-          icon={Clock3}
-          iconColor="#d97706"
-          iconBackground="#fff7e8"
-          smallText="Sedang dikerjakan"
-        />
-
-        <StatCard
-          label="To Do"
-          value={todoTasks}
-          icon={FilePenLine}
-          iconColor="#0ea5e9"
-          iconBackground="#edf8fd"
-          smallText="Siap dikerjakan"
-        />
-
-        <StatCard
-          label="Backlog"
-          value={backlogTasks}
-          icon={Package}
-          iconColor="#73706a"
-          iconBackground="#f1f0ed"
-          smallText="Belum diproses"
-        />
-      </div>
-
-
-      {/* ===================================================
-          SECONDARY STATS
-          =================================================== */}
-
-      <div
-        style={{
-          display: 'flex',
-          gap: 14,
-          flexWrap: 'wrap',
-          marginBottom: 22
-        }}
-      >
-
-        <StatCard
-          label="Minggu Ini"
-          value={s.completed_this_week ?? 0}
-          icon={CalendarDays}
-          iconColor="#f97316"
-          iconBackground="#fff1e7"
-          smallText="Task selesai minggu ini"
-        />
-
-        <StatCard
-          label="Waktu"
-          value={formatTime(
-            s.total_time_tracked
+          {board && onOpenBoard && (
+            <button
+              type="button"
+              className="k-btn"
+              onClick={() => onOpenBoard(board.id, board.name, board.role)}
+            >
+              Buka board <ArrowUpRight size={15} />
+            </button>
           )}
-          icon={Timer}
-          iconColor="#7a8560"
-          iconBackground="#f1f3e9"
-          smallText="Total waktu dilacak"
-        />
+        </div>
 
-        <StatCard
-          label="Board"
-          value={s.boards_count ?? 0}
-          icon={LayoutGrid}
-          iconColor="#7a8560"
-          iconBackground="#f1f3e9"
-          smallText="Jumlah board"
-        />
-
-      </div>
-
-
-      {/* ===================================================
-          COMPLETION RATE
-          =================================================== */}
-
-      <div
-        style={{
-          background: '#ffffff',
-          border: '1px solid #e8e5df',
-          borderRadius: 14,
-          padding: 18,
-          marginBottom: 22,
-          boxSizing: 'border-box'
-        }}
-      >
+        {/* PILIH BOARD */}
 
         <div
           style={{
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 9
+            gap: 8,
+            overflowX: 'auto',
+            paddingBottom: 6,
+            marginBottom: 20
           }}
         >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8
-            }}
+          <button
+            type="button"
+            className={`k-tab${selected === 'all' ? ' on' : ''}`}
+            onClick={() => setSelected('all')}
           >
-            <div
+            Semua board <small>{boards.length}</small>
+          </button>
+
+          {boards.map((b) => (
+            <button
+              key={b.id}
+              type="button"
+              className={`k-tab${selected === b.id ? ' on' : ''}`}
+              onClick={() => setSelected(b.id)}
+            >
+              {b.name}
+              <small>{(tasksByBoard[b.id] || []).length}</small>
+            </button>
+          ))}
+        </div>
+
+        {boards.length === 0 ? (
+          <Empty>Belum ada board. Buat board dulu untuk melihat statistik.</Empty>
+        ) : (
+          <>
+            {/* RINGKASAN */}
+
+            <section
+              className="k-panel k-split"
               style={{
-                width: 30,
-                height: 30,
-                borderRadius: 9,
-                background: '#fff1e7',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
+                display: 'grid',
+                gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr)',
+                marginBottom: 18,
+                overflow: 'hidden'
               }}
             >
-              <TrendingUp
-                size={16}
-                color="#f97316"
-                strokeWidth={1.9}
-              />
-            </div>
+              <div style={{ padding: '24px 26px' }}>
+                <div className="k-eyebrow">Tingkat penyelesaian</div>
 
-            <div>
-              <div
-                style={{
-                  fontSize: 13,
-                  fontWeight: 700,
-                  color: '#292929'
-                }}
-              >
-                Tingkat Penyelesaian
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    gap: 10,
+                    margin: '6px 0 18px'
+                  }}
+                >
+                  <span
+                    className="k-num"
+                    style={{ fontSize: 64, fontWeight: 600, lineHeight: 1 }}
+                  >
+                    {data.pct}
+                    <span style={{ fontSize: 30, color: 'var(--k-orange)' }}>%</span>
+                  </span>
+                  <span style={{ fontSize: 13, color: 'var(--k-muted)' }}>
+                    {data.byStatus.done} dari {data.total} tugas selesai
+                  </span>
+                </div>
+
+                <div className="k-stack" role="img" aria-label="Distribusi status tugas">
+                  {data.total === 0 ? (
+                    <span style={{ flexGrow: 1, background: 'transparent' }} />
+                  ) : (
+                    STATUSES.map((s) =>
+                      data.byStatus[s.id] > 0 ? (
+                        <span
+                          key={s.id}
+                          style={{
+                            flexGrow: data.byStatus[s.id],
+                            flexBasis: 0,
+                            background: s.color
+                          }}
+                        />
+                      ) : null
+                    )
+                  )}
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '8px 22px',
+                    marginTop: 14
+                  }}
+                >
+                  {STATUSES.map((s) => (
+                    <span
+                      key={s.id}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 7,
+                        fontSize: 12.5,
+                        color: 'var(--k-ink-2)'
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: 9,
+                          height: 9,
+                          borderRadius: 3,
+                          background: s.color
+                        }}
+                      />
+                      {s.label}
+                      <strong className="k-num" style={{ fontWeight: 600 }}>
+                        {data.byStatus[s.id]}
+                      </strong>
+                    </span>
+                  ))}
+                </div>
               </div>
 
               <div
                 style={{
-                  fontSize: 10.5,
-                  color: '#9a9892',
-                  marginTop: 2
+                  borderLeft: '1px solid var(--k-line)',
+                  display: 'grid',
+                  gridTemplateRows: 'repeat(3, 1fr)'
                 }}
               >
-                Persentase tugas yang sudah selesai
+                {[
+                  { label: 'Tugas aktif', value: data.openCount, note: 'belum selesai' },
+                  {
+                    label: 'Terlambat',
+                    value: data.overdue.length,
+                    note: 'lewat deadline',
+                    alert: data.overdue.length > 0
+                  },
+                  { label: 'Waktu terlacak', value: formatTime(data.seconds), note: 'total timer' }
+                ].map((row, i) => (
+                  <div
+                    key={row.label}
+                    style={{
+                      padding: '14px 24px',
+                      borderTop: i === 0 ? 'none' : '1px solid var(--k-line)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 12
+                    }}
+                  >
+                    <div>
+                      <div className="k-eyebrow">{row.label}</div>
+                      <div style={{ fontSize: 11.5, color: 'var(--k-faint)', marginTop: 2 }}>
+                        {row.note}
+                      </div>
+                    </div>
+                    <div
+                      className="k-num"
+                      style={{
+                        fontSize: 30,
+                        fontWeight: 600,
+                        color: row.alert ? 'var(--k-red)' : 'var(--k-ink)'
+                      }}
+                    >
+                      {row.value}
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          </div>
+            </section>
 
+            {/* BEBAN + PRIORITAS */}
+
+            <div
+              className="k-split"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'minmax(0, 1.3fr) minmax(0, 1fr)',
+                gap: 18,
+                marginBottom: 18
+              }}
+            >
+              <Panel
+                title="Beban per anggota"
+                hint="Bagian gelap adalah tugas yang sudah selesai."
+              >
+                {data.people.length === 0 && data.unassigned.total === 0 ? (
+                  <Empty>Belum ada tugas di board ini.</Empty>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {data.people.map((p) => (
+                      <LoadRow key={p.key} person={p} max={maxLoad} />
+                    ))}
+                    {data.unassigned.total > 0 && (
+                      <LoadRow
+                        person={{ name: 'Belum ditugaskan', ...data.unassigned }}
+                        max={maxLoad}
+                        muted
+                      />
+                    )}
+                  </div>
+                )}
+              </Panel>
+
+              <Panel
+                title="Prioritas tugas aktif"
+                hint="Hanya tugas yang belum selesai."
+              >
+                {data.openCount === 0 ? (
+                  <Empty>Tidak ada tugas aktif.</Empty>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
+                    {PRIORITIES.map((p) => (
+                      <div key={p.id}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            fontSize: 12.5,
+                            marginBottom: 5
+                          }}
+                        >
+                          <span style={{ color: 'var(--k-ink-2)' }}>{p.label}</span>
+                          <strong className="k-num" style={{ fontWeight: 600 }}>
+                            {data.byPriority[p.id]}
+                          </strong>
+                        </div>
+                        <div className="k-bar">
+                          <span
+                            style={{
+                              width: `${(data.byPriority[p.id] / maxPriority) * 100}%`,
+                              background: p.color
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Panel>
+            </div>
+
+            {/* TERLAMBAT + WAKTU */}
+
+            <div
+              className="k-split"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+                gap: 18
+              }}
+            >
+              <Panel title="Tugas terlambat" hint="Urut dari yang paling lama lewat deadline.">
+                {data.overdue.length === 0 ? (
+                  <Empty>Tidak ada tugas yang terlambat.</Empty>
+                ) : (
+                  <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                    {data.overdue.slice(0, 6).map((t) => (
+                      <li
+                        key={`${t._board}-${t.id}`}
+                        className="k-row-hover"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                          padding: '10px 6px',
+                          borderTop: '1px solid var(--k-line-soft)'
+                        }}
+                      >
+                        <CircleAlert size={16} color="var(--k-red)" style={{ flexShrink: 0 }} />
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div
+                            style={{
+                              fontSize: 13,
+                              fontWeight: 600,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            {t.title}
+                          </div>
+                          <div style={{ fontSize: 11.5, color: 'var(--k-muted)' }}>
+                            {selected === 'all' && t._board ? `${t._board} · ` : ''}
+                            Deadline {formatDay(t.due)}
+                          </div>
+                        </div>
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: 'var(--k-red)',
+                            background: '#fdecea',
+                            padding: '3px 8px',
+                            borderRadius: 6,
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {t.late} hari
+                        </span>
+                      </li>
+                    ))}
+                    {data.overdue.length > 6 && (
+                      <li
+                        style={{
+                          fontSize: 12,
+                          color: 'var(--k-muted)',
+                          paddingTop: 10,
+                          borderTop: '1px solid var(--k-line-soft)'
+                        }}
+                      >
+                        dan {data.overdue.length - 6} tugas lain
+                      </li>
+                    )}
+                  </ul>
+                )}
+              </Panel>
+
+              <Panel title="Waktu terlacak" hint="Lima tugas dengan timer terlama.">
+                {data.topTime.length === 0 ? (
+                  <Empty>Belum ada timer yang dijalankan.</Empty>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
+                    {data.topTime.map((t) => (
+                      <div key={`${t._board}-${t.id}`}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            gap: 10,
+                            fontSize: 12.5,
+                            marginBottom: 5
+                          }}
+                        >
+                          <span
+                            style={{
+                              color: 'var(--k-ink-2)',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            {t.title}
+                          </span>
+                          <span
+                            className="k-num"
+                            style={{
+                              fontWeight: 600,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              flexShrink: 0
+                            }}
+                          >
+                            <Clock3 size={12} color="var(--k-muted)" />
+                            {formatTime(t.time)}
+                          </span>
+                        </div>
+                        <div className="k-bar">
+                          <span
+                            style={{
+                              width: `${(Number(t.time) / maxTime) * 100}%`,
+                              background: 'var(--k-ink)'
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Panel>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* =========================================================
+   BARIS BEBAN ANGGOTA
+   ========================================================= */
+
+function LoadRow({ person, max, muted }) {
+  const width = (person.total / max) * 100;
+  const doneShare = person.total > 0 ? (person.done / person.total) * 100 : 0;
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      {muted ? (
+        <span
+          style={{
+            width: 28,
+            height: 28,
+            borderRadius: '50%',
+            border: '1.5px dashed #cfc9b8',
+            flexShrink: 0
+          }}
+        />
+      ) : (
+        <Avatar name={person.name} avatar={person.avatar} />
+      )}
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            fontSize: 12.5,
+            marginBottom: 5
+          }}
+        >
           <span
             style={{
-              fontSize: 17,
-              fontWeight: 700,
-              color: '#f97316'
+              color: muted ? 'var(--k-muted)' : 'var(--k-ink-2)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
             }}
           >
-            {completionRate}%
+            {person.name}
+          </span>
+          <span style={{ color: 'var(--k-muted)', flexShrink: 0, marginLeft: 8 }}>
+            <strong className="k-num" style={{ color: 'var(--k-ink)', fontWeight: 600 }}>
+              {person.done}
+            </strong>
+            /{person.total} selesai
           </span>
         </div>
 
-
-        <div
-          style={{
-            height: 9,
-            borderRadius: 20,
-            background: '#eceae5',
-            overflow: 'hidden'
-          }}
-        >
-          <div
+        <div className="k-bar" style={{ background: 'transparent' }}>
+          <span
             style={{
-              width: `${Math.min(
-                100,
-                Math.max(0, completionRate)
-              )}%`,
-              height: '100%',
-              background: '#f97316',
-              borderRadius: 20,
-              transition: 'width .4s ease'
-            }}
-          />
-        </div>
-
-      </div>
-
-
-      {/* ===================================================
-          LOWER CONTENT
-          =================================================== */}
-
-      <div
-        style={{
-          display: 'flex',
-          gap: 18,
-          flexWrap: 'wrap'
-        }}
-      >
-
-        {/* =================================================
-            PER BOARD
-            ================================================= */}
-
-        <div
-          style={{
-            flex: '1 1 420px',
-            background: '#ffffff',
-            border: '1px solid #e8e5df',
-            borderRadius: 14,
-            padding: 18,
-            boxSizing: 'border-box'
-          }}
-        >
-
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 18
+              width: `${width}%`,
+              background: '#f6d7bd',
+              position: 'relative',
+              overflow: 'hidden'
             }}
           >
-            <div>
-              <h3
-                style={{
-                  margin: 0,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: '#292929'
-                }}
-              >
-                Progress Board
-              </h3>
-
-              <p
-                style={{
-                  margin: '4px 0 0',
-                  fontSize: 10.5,
-                  color: '#9a9892'
-                }}
-              >
-                Perbandingan tugas yang telah selesai
-              </p>
-            </div>
-
-            <LayoutGrid
-              size={18}
-              color="#b0ada6"
-              strokeWidth={1.7}
-            />
-          </div>
-
-
-          {(!s.per_board ||
-            s.per_board.length === 0) ? (
-
-            <div
+            <span
               style={{
-                padding: '25px 0',
-                textAlign: 'center',
-                color: '#aaa69f',
-                fontSize: 12
+                position: 'absolute',
+                inset: 0,
+                width: `${doneShare}%`,
+                background: muted ? '#9a968a' : 'var(--k-ink)'
               }}
-            >
-              Belum ada board.
-            </div>
-
-          ) : (
-
-            s.per_board.map((board) => (
-              <BoardProgress
-                key={board.board_id}
-                board={board}
-              />
-            ))
-
-          )}
-
-        </div>
-
-
-        {/* =================================================
-            RECENT COMPLETED
-            ================================================= */}
-
-        <div
-          style={{
-            flex: '1 1 420px',
-            background: '#ffffff',
-            border: '1px solid #e8e5df',
-            borderRadius: 14,
-            padding: 18,
-            boxSizing: 'border-box'
-          }}
-        >
-
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 7
-            }}
-          >
-            <div>
-              <h3
-                style={{
-                  margin: 0,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: '#292929'
-                }}
-              >
-                Baru Selesai
-              </h3>
-
-              <p
-                style={{
-                  margin: '4px 0 0',
-                  fontSize: 10.5,
-                  color: '#9a9892'
-                }}
-              >
-                Lima tugas terakhir yang diselesaikan
-              </p>
-            </div>
-
-            <CircleCheck
-              size={18}
-              color="#16a34a"
-              strokeWidth={1.8}
             />
-          </div>
-
-
-          {(!s.recent_completed ||
-            s.recent_completed.length === 0) ? (
-
-            <div
-              style={{
-                padding: '30px 0',
-                textAlign: 'center',
-                color: '#aaa69f',
-                fontSize: 12
-              }}
-            >
-              Belum ada tugas yang selesai.
-            </div>
-
-          ) : (
-
-            s.recent_completed.map((task) => (
-              <RecentTask
-                key={task.id}
-                task={task}
-              />
-            ))
-
-          )}
-
+          </span>
         </div>
-
       </div>
-
     </div>
   );
 }

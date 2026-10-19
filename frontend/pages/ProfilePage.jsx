@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../utils/api';
+import { LogOut, Upload, Trash2, Check, TriangleAlert } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuth();
@@ -8,6 +9,8 @@ export default function ProfilePage() {
   const [avatar, setAvatar]     = useState(user?.avatar || '');
   const [loading, setLoading]   = useState(false);
   const [message, setMessage]   = useState('');
+  const [savedName, setSavedName] = useState(user?.fullname || '');
+  const [savedAvatar, setSavedAvatar] = useState(user?.avatar || '');
 
   const compressAndResizeImage = (base64Str) => {
     return new Promise((resolve) => {
@@ -34,7 +37,7 @@ export default function ProfilePage() {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      setMessage('✗ Ukuran file terlalu besar. Maksimal 5MB.');
+      setMessage('✗ Ukuran file terlalu besar. Maksimal 5 MB.');
       return;
     }
     const reader = new FileReader();
@@ -53,9 +56,11 @@ export default function ProfilePage() {
     try {
       const updatedUser = await api.updateProfile(fullname, avatar);
       updateUser(updatedUser);
-      setMessage('✓ Profile updated successfully');
+      setSavedName(fullname);
+      setSavedAvatar(avatar);
+      setMessage('✓ Profil berhasil diperbarui.');
     } catch (error) {
-      setMessage('✗ Failed to update profile: ' + error.message);
+      setMessage('✗ Gagal memperbarui profil: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -91,129 +96,261 @@ export default function ProfilePage() {
     }
   };
 
+  const ok = message.startsWith('✓');
+  const dirty = fullname !== savedName || avatar !== savedAvatar;
+  const displayName = fullname || user?.username || '';
+
+  const memberSince = user?.created_at
+    ? new Date(user.created_at).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      })
+    : 'Baru saja';
+
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto', padding: 20, fontFamily: 'system-ui, sans-serif' }}>
-
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, margin: '0 0 8px 0' }}>User Profile</h1>
-          <p style={{ fontSize: 14, color: '#999', margin: 0 }}>Manage your account information</p>
+    <div className="k-page" style={{ padding: '26px 34px 56px' }}>
+      <div style={{ maxWidth: 920, margin: '0 auto' }}>
+        <div style={{ fontSize: 11.5, color: 'var(--k-faint)', marginBottom: 5 }}>
+          Home <span style={{ margin: '0 3px' }}>›</span>
+          <span style={{ color: 'var(--k-orange)', fontWeight: 600 }}>Pengaturan</span>
         </div>
-        <button onClick={handleLogout} style={{
-          padding: '8px 16px', background: '#fff', color: '#e53e3e',
-          border: '1px solid #fed7d7', borderRadius: 6, fontSize: 13,
-          fontWeight: 600, cursor: 'pointer'
-        }}
-          onMouseEnter={e => e.target.style.background = '#fff5f5'}
-          onMouseLeave={e => e.target.style.background = '#fff'}
-        >
-          Logout
-        </button>
-      </div>
 
-      {/* Profile card */}
-      <div style={{ background: 'white', borderRadius: 8, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: 16 }}>
-        <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 24 }}>
-          <div style={{
-            width: 80, height: 80, borderRadius: '50%', overflow: 'hidden',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: '#667eea', border: '2px solid #fff',
-            boxShadow: '0 0 0 2px #667eea', flexShrink: 0
-          }}>
-            {avatar ? (
-              <img src={avatar} alt="Profile Preview"
-                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} />
-            ) : (
-              <span style={{ color: 'white', fontSize: 32, fontWeight: 700 }}>
-                {(fullname || user?.username)?.[0]?.toUpperCase()}
-              </span>
-            )}
-          </div>
-          <div>
-            <p style={{ fontSize: 16, fontWeight: 600, margin: 0, color: '#333' }}>{fullname || user?.username}</p>
-            <p style={{ fontSize: 13, color: '#999', margin: '4px 0 0 0' }}>@{user?.username}</p>
-            <p style={{ fontSize: 12, color: '#999', margin: '4px 0 0 0' }}>{user?.email}</p>
-          </div>
-        </div>
-        <div style={{ background: '#f5f5f5', borderRadius: 6, padding: 12, fontSize: 12, color: '#666' }}>
-          <p style={{ margin: 0, marginBottom: 4 }}>Member Since</p>
-          <p style={{ margin: 0, fontWeight: 600 }}>
-            {user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'Just now'}
-          </p>
-        </div>
-      </div>
-
-      {/* Edit form */}
-      <div style={{ background: 'white', borderRadius: 8, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: 16 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 16px 0' }}>Edit Profile</h2>
-        <form onSubmit={handleSubmit}>
-
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 13, fontWeight: 500, color: '#333', display: 'block', marginBottom: 6 }}>Full Name</label>
-            <input type="text" value={fullname} onChange={e => setFullname(e.target.value)}
-              placeholder="Your full name"
-              style={{ width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, boxSizing: 'border-box', outline: 'none' }}
-              onFocus={e => e.target.style.borderColor = '#667eea'}
-              onBlur={e => e.target.style.borderColor = '#ddd'}
-            />
-          </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 13, fontWeight: 500, color: '#333', display: 'block', marginBottom: 6 }}>Avatar Baru</label>
-            <input type="file" accept="image/*" onChange={handleFileChange}
-              style={{ fontSize: 13, cursor: 'pointer', width: '100%' }} />
-            <p style={{ fontSize: 11, color: '#999', margin: '6px 0 0 0' }}>
-              Pilih foto dari perangkat Anda. Maksimal 5MB.
-            </p>
-          </div>
-
-          <div style={{ background: '#f5f5f5', borderRadius: 6, padding: 12, marginBottom: 20 }}>
-            <p style={{ fontSize: 12, fontWeight: 500, color: '#666', margin: '0 0 8px 0' }}>Account Information</p>
-            <div style={{ fontSize: 12, color: '#999' }}>
-              <p style={{ margin: '4px 0' }}>Username: <strong>{user?.username}</strong></p>
-              <p style={{ margin: '4px 0' }}>Email: <strong>{user?.email}</strong></p>
-            </div>
-          </div>
-
-          {message && (
-            <div style={{
-              background: message.includes('✓') ? '#efe' : '#fee',
-              border: `1px solid ${message.includes('✓') ? '#cfc' : '#fcc'}`,
-              color: message.includes('✓') ? '#3a3' : '#c33',
-              padding: 10, borderRadius: 6, fontSize: 12, marginBottom: 16
-            }}>
-              {message}
-            </div>
-          )}
-
-          <button type="submit" disabled={loading} style={{
-            width: '100%', padding: '10px 12px', background: '#667eea',
-            color: 'white', border: 'none', borderRadius: 6, fontSize: 13,
-            fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
-            opacity: loading ? 0.7 : 1
-          }}>
-            {loading ? 'Saving...' : 'Save Changes'}
-          </button>
-        </form>
-      </div>
-
-      {/* Danger zone */}
-      <div style={{ background: '#fff', borderRadius: 8, padding: 24, border: '1px solid #f5c6cb', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-        <h3 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 8px 0', color: '#721c24' }}>Danger Zone</h3>
-        <p style={{ fontSize: 12, color: '#721c24', margin: '0 0 16px 0' }}>
-          Tindakan di bawah ini bersifat permanen dan tidak dapat dipulihkan kembali.
+        <h1 className="k-display" style={{ margin: '0 0 4px', fontSize: 28, fontWeight: 600 }}>
+          Pengaturan
+        </h1>
+        <p style={{ margin: '0 0 24px', fontSize: 13, color: 'var(--k-muted)' }}>
+          Atur profil dan akun Kanbify kamu.
         </p>
-        <button type="button" disabled={loading} onClick={handleDeleteAccount} style={{
-          width: '100%', padding: '10px 12px', background: '#e53e3e',
-          color: 'white', border: 'none', borderRadius: 6, fontSize: 13,
-          fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
-          opacity: loading ? 0.7 : 1
-        }}>
-          {loading ? 'Processing...' : 'Hapus Akun Saya Secara Permanen'}
-        </button>
-      </div>
 
+        <div
+          className="k-split"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '280px minmax(0, 1fr)',
+            gap: 20,
+            alignItems: 'start'
+          }}
+        >
+          {/* IDENTITAS */}
+
+          <aside className="k-panel" style={{ padding: '26px 22px', textAlign: 'center' }}>
+            <div
+              style={{
+                width: 112,
+                height: 112,
+                margin: '0 auto 16px',
+                borderRadius: '50%',
+                overflow: 'hidden',
+                background: '#fde6d3',
+                color: '#b45309',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 44,
+                fontWeight: 700,
+                boxShadow: '0 0 0 4px #fff, 0 0 0 6px var(--k-orange)'
+              }}
+            >
+              {avatar ? (
+                <img
+                  src={avatar}
+                  alt="Foto profil"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                displayName[0]?.toUpperCase()
+              )}
+            </div>
+
+            <div className="k-display" style={{ fontSize: 19, fontWeight: 600 }}>
+              {displayName}
+            </div>
+            <div style={{ fontSize: 12.5, color: 'var(--k-muted)', marginTop: 3 }}>
+              @{user?.username}
+            </div>
+
+            <label
+              htmlFor="avatar-input"
+              className="k-btn"
+              style={{ marginTop: 18, justifyContent: 'center', width: '100%', boxSizing: 'border-box' }}
+            >
+              <Upload size={14} /> Ganti foto
+            </label>
+            <input
+              id="avatar-input"
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+            />
+            <p style={{ fontSize: 11, color: 'var(--k-faint)', margin: '8px 0 0' }}>
+              JPG atau PNG, maksimal 5 MB.
+            </p>
+
+            <div
+              style={{
+                marginTop: 20,
+                paddingTop: 16,
+                borderTop: '1px solid var(--k-line-soft)',
+                textAlign: 'left'
+              }}
+            >
+              <div className="k-eyebrow">Bergabung sejak</div>
+              <div style={{ fontSize: 13, fontWeight: 600, marginTop: 4 }}>{memberSince}</div>
+            </div>
+          </aside>
+
+          {/* FORM */}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <form onSubmit={handleSubmit} className="k-panel" style={{ padding: '22px 24px' }}>
+              <h2 className="k-display" style={{ margin: '0 0 16px', fontSize: 17, fontWeight: 600 }}>
+                Profil
+              </h2>
+
+              <div style={{ marginBottom: 16 }}>
+                <label className="k-field-label" htmlFor="fullname">
+                  Nama lengkap
+                </label>
+                <input
+                  id="fullname"
+                  className="k-input"
+                  type="text"
+                  value={fullname}
+                  onChange={(e) => setFullname(e.target.value)}
+                  placeholder="Nama yang tampil di board"
+                />
+              </div>
+
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: 12,
+                  marginBottom: 18
+                }}
+              >
+                {[
+                  ['Username', user?.username],
+                  ['Email', user?.email]
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <div className="k-eyebrow" style={{ marginBottom: 5 }}>{label}</div>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        padding: '10px 12px',
+                        borderRadius: 10,
+                        background: '#f7f6f1',
+                        color: 'var(--k-ink-2)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}
+                      title={value}
+                    >
+                      {value}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {message && (
+                <div
+                  role="status"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    background: ok ? '#edf8f1' : '#fff1f0',
+                    border: `1px solid ${ok ? '#c3e6d1' : '#fbd0cc'}`,
+                    color: ok ? '#1f7a48' : '#b42318',
+                    padding: '10px 12px',
+                    borderRadius: 10,
+                    fontSize: 12.5,
+                    marginBottom: 16
+                  }}
+                >
+                  {ok ? <Check size={15} /> : <TriangleAlert size={15} />}
+                  {message.replace(/^[✓✗]\s*/, '')}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12 }}>
+                {dirty && !loading && (
+                  <span style={{ fontSize: 12, color: 'var(--k-muted)' }}>
+                    Ada perubahan yang belum disimpan
+                  </span>
+                )}
+                <button
+                  type="submit"
+                  className="k-btn k-btn-primary"
+                  disabled={loading || !dirty}
+                  style={{ opacity: loading || !dirty ? 0.55 : 1, cursor: loading || !dirty ? 'default' : 'pointer' }}
+                >
+                  {loading ? 'Menyimpan...' : 'Simpan perubahan'}
+                </button>
+              </div>
+            </form>
+
+            <section
+              className="k-panel"
+              style={{
+                padding: '18px 24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 16,
+                flexWrap: 'wrap'
+              }}
+            >
+              <div>
+                <h2 className="k-display" style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>
+                  Sesi
+                </h2>
+                <p style={{ margin: '3px 0 0', fontSize: 12, color: 'var(--k-muted)' }}>
+                  Keluar dari Kanbify di perangkat ini.
+                </p>
+              </div>
+              <button type="button" className="k-btn" onClick={handleLogout}>
+                <LogOut size={15} /> Keluar
+              </button>
+            </section>
+
+            <section
+              className="k-panel"
+              style={{
+                padding: '18px 24px',
+                borderColor: '#f3cbc6',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 16,
+                flexWrap: 'wrap'
+              }}
+            >
+              <div style={{ maxWidth: 380 }}>
+                <h2 className="k-display" style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#9b2c22' }}>
+                  Hapus akun
+                </h2>
+                <p style={{ margin: '3px 0 0', fontSize: 12, color: 'var(--k-muted)', lineHeight: 1.5 }}>
+                  Akun dan seluruh tugasmu terhapus permanen. Tindakan ini tidak bisa dibatalkan.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="k-btn"
+                onClick={handleDeleteAccount}
+                disabled={loading}
+                style={{ background: '#d6453d', borderColor: '#d6453d', color: '#fff' }}
+              >
+                <Trash2 size={15} /> Hapus akun
+              </button>
+            </section>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

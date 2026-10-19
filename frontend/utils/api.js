@@ -160,7 +160,8 @@ async toggleStarBoard(boardId) {
     time = 0,
     is_running = false,
     priority = 'sedang',
-    assignees = []
+    assignees = [],
+    start_date = null
   ) {
     return this.request('/tasks', {
       method: 'POST',
@@ -172,6 +173,7 @@ async toggleStarBoard(boardId) {
         color,
         board_id,
         due_date,
+        start_date,
         time: parseInt(time) || 0,
         is_running: !!is_running,
         assignees
@@ -189,7 +191,8 @@ async toggleStarBoard(boardId) {
     isRunning,
     due_date,
     priority,
-    assignees
+    assignees,
+    start_date
   ) {
     const payload = {
       title,
@@ -199,7 +202,8 @@ async toggleStarBoard(boardId) {
       color,
       time: parseInt(time) || 0,
       isRunning: !!isRunning,
-      due_date
+      due_date,
+      start_date
     };
 
     // Kirim assignees hanya jika memang disediakan.
@@ -215,6 +219,19 @@ async toggleStarBoard(boardId) {
 
   async deleteTask(id) {
     return this.request(`/tasks/${id}`, { method: 'DELETE' });
+  }
+
+  // ── NOTIFICATIONS ─────────────────────────────────────
+  async getNotifications() {
+    return this.request('/notifications');
+  }
+
+  async markNotificationRead(id) {
+    return this.request(`/notifications/${id}/read`, { method: 'PUT' });
+  }
+
+  async markAllNotificationsRead() {
+    return this.request('/notifications/read-all', { method: 'PUT' });
   }
 
   // ── STATS ─────────────────────────────────────────────

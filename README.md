@@ -138,4 +138,4 @@ Semua endpoint selain `auth/register` dan `auth/login` memerlukan token Sanctum.
 
 ## Lisensi
 
-Proyek ini dibuat untuk keperluan tugas kuliah (TRPL).
+Proyek ini dibuat untuk ....

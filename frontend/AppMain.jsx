@@ -12,6 +12,7 @@ import {
 } from './contexts/AuthContext';
 
 import LoginPage from './pages/LoginPage';
+import SocialCallbackPage from './pages/SocialCallbackPage';
 import DashboardPage from './pages/DashboardPage';
 import AllBoardsPage from './pages/AllBoardsPage';
 import ProfilePage from './pages/ProfilePage';
@@ -514,6 +515,11 @@ function AppContent() {
   | LOGIN
   |--------------------------------------------------------------------------
   */
+
+  // Google mengembalikan pengguna ke /auth/callback?code=...
+  if (window.location.pathname === '/auth/callback') {
+    return <SocialCallbackPage />;
+  }
 
   if (!isAuthenticated) {
     return <LoginPage />;

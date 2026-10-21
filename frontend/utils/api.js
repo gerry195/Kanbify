@@ -51,6 +51,13 @@ class APIClient {
     });
   }
 
+  async exchangeSocialCode(code) {
+    return this.request('/auth/social/exchange', {
+      method: 'POST',
+      body: JSON.stringify({ code })
+    });
+  }
+
   async login(username, password) {
     return this.request('/auth/login', {
       method: 'POST',

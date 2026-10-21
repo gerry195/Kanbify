@@ -1111,7 +1111,7 @@ const openTaskDetails = (quest) => {
       setQuests(prev => prev.filter(q => String(q.id) !== String(id)));
       if (String(selectedTaskId) === String(id)) setSelectedTaskId(null);
       if (String(taskMenuOpenId) === String(id)) setTaskMenuOpenId(null);
-
+r
     } catch (err) {
 
       console.error("Gagal hapus task:", err);

@@ -175,7 +175,7 @@ export default function LoginPage() {
   };
 
   const overlayStyle = {
-    background: 'linear-gradient(135deg, #7a8560 0%, #636b4d 100%)',
+    background: `linear-gradient(135deg, rgba(72, 79, 54, 0.42) 0%, rgba(47, 53, 37, 0.52) 100%), url(${loginGif}) center / cover no-repeat`,
     color: '#ffffff', position: 'relative', height: '100%', width: '100%',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     borderRadius: isLoginView ? '0 100px 100px 0' : '100px 0 0 100px',

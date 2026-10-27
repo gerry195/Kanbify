@@ -784,45 +784,82 @@ export default function App({ boardId, boardName, role = 'member', onBackToDashb
 
   // ── Fetch tasks ──
 
-  useEffect(() => {
+// ── Fetch tasks + soft refresh ──
 
-    if (!boardId) return;
+useEffect(() => {
+  if (!boardId) return;
 
-    setLoading(true);
+  let active = true;
+  let isFetching = false;
 
-    api.getTasks(boardId)
+  const loadTasks = async (showLoading = false) => {
+    if (isFetching) return;
 
-      .then(data => {
+    isFetching = true;
 
-        const normalised = data.map(t => ({
+    if (showLoading) {
+      setLoading(true);
+    }
 
-          ...t,
+    try {
+      const data = await api.getTasks(boardId);
 
-          note:      t.description ?? t.note ?? "",
+      if (!active || !Array.isArray(data)) return;
 
-          time:      Number(t.time) || 0,
+      const normalised = data.map(t => ({
+        ...t,
+        note: t.description ?? t.note ?? "",
+        time: Number(t.time) || 0,
+        isRunning: Boolean(t.is_running ?? t.isRunning),
+        color: t.color ?? null,
+        priority: t.priority ?? "sedang",
+        due_date: toDateKey(t.due_date),
+      }));
 
-          isRunning: Boolean(t.is_running || t.isRunning),
+      setQuests(normalised);
+    } catch (err) {
+      console.error("Gagal memperbarui tasks:", err);
+    } finally {
+      isFetching = false;
 
-          color:     t.color ?? null,
+      if (active && showLoading) {
+        setLoading(false);
+      }
+    }
+  };
 
-          priority:  t.priority ?? "sedang",
+  // Muat data pertama kali ketika board dibuka.
+  loadTasks(true);
 
-          due_date:  toDateKey(t.due_date),
+  // Periksa perubahan dari pengguna lain setiap 3 detik.
+  const intervalId = setInterval(() => {
+    if (!document.hidden) {
+      loadTasks(false);
+    }
+  }, 3000);
 
-          start_date: toDateKey(t.start_date),
+  // Perbarui segera ketika pengguna kembali ke tab.
+  const handleVisibilityChange = () => {
+    if (!document.hidden) {
+      loadTasks(false);
+    }
+  };
 
-        }));
+  document.addEventListener(
+    "visibilitychange",
+    handleVisibilityChange
+  );
 
-        setQuests(normalised);
+  return () => {
+    active = false;
+    clearInterval(intervalId);
 
-      })
-
-      .catch(err => console.error("Gagal ambil tasks:", err))
-
-      .finally(() => setLoading(false));
-
-  }, [boardId]);
+    document.removeEventListener(
+      "visibilitychange",
+      handleVisibilityChange
+    );
+  };
+}, [boardId]);
 
 
 

@@ -16,19 +16,34 @@ class TaskController extends Controller
      * Menampilkan semua tugas pada board.
      * Hanya anggota board yang dapat mengaksesnya.
      */
-    public function index(Request $request, Board $board)
-    {
-        if (! $board->roleOf($request->user())) {
-            return response()->json(['error' => 'Forbidden'], 403);
+public function index(Request $request, Board $board)
+{
+    if (! $board->roleOf($request->user())) {
+        return response()->json(['error' => 'Forbidden'], 403);
+    }
+
+    $tasks = $board->tasks()
+        ->with('assignees')
+        ->orderBy('id')
+        ->get();
+
+    $now = now();
+
+    $tasks->transform(function ($task) use ($now) {
+        if ($task->is_running && $task->started_at) {
+            $elapsed = max(
+                0,
+                $now->timestamp - $task->started_at->timestamp
+            );
+
+            $task->time = (int) $task->time + $elapsed;
         }
 
-        return response()->json(
-            $board->tasks()
-                ->with('assignees')
-                ->orderBy('id')
-                ->get()
-        );
-    }
+        return $task;
+    });
+
+    return response()->json($tasks);
+}
 
     /**
      * Memastikan semua assignee merupakan anggota board.
@@ -130,115 +145,168 @@ class TaskController extends Controller
      * Memperbarui tugas atau memindahkannya antar kolom.
      * Semua anggota board boleh memperbarui tugas.
      */
-    public function update(Request $request, Task $task)
-    {
-        $board = $task->board;
+public function update(Request $request, Task $task)
+{
+    $board = $task->board;
 
-        if (! $board->roleOf($request->user())) {
-            return response()->json(['error' => 'Forbidden'], 403);
+    if (! $board->roleOf($request->user())) {
+        return response()->json(['error' => 'Forbidden'], 403);
+    }
+
+    $data = $request->validate([
+        'title'       => 'sometimes|required|string|max:255',
+        'status'      => 'sometimes|nullable|in:backlog,todo,in-progress,done',
+        'priority'    => 'sometimes|nullable|in:sangat-tinggi,tinggi,sedang,rendah,sangat-rendah',
+        'time'        => 'sometimes|nullable|integer|min:0',
+        'isRunning'   => 'sometimes|boolean',
+        'is_running'  => 'sometimes|boolean',
+        'description' => 'sometimes|nullable|string',
+        'color'       => 'sometimes|nullable|string',
+        'start_date'  => 'sometimes|nullable|date',
+        'due_date'    => 'sometimes|nullable|date',
+        'assignees'   => 'sometimes|array',
+        'assignees.*' => 'required|integer|distinct|exists:users,id',
+    ]);
+
+    $assigneeIds = $data['assignees'] ?? null;
+
+    if ($assigneeIds !== null) {
+        $this->validateBoardAssignees($board, $assigneeIds);
+    }
+
+    $oldStatus = $task->status;
+
+    $changedFields = $this->changedFields(
+        $task,
+        $data,
+        $assigneeIds
+    );
+
+    $fresh = DB::transaction(function () use (
+        $task,
+        $data,
+        $assigneeIds
+    ) {
+        // Ambil data terbaru agar perubahan timer lebih aman
+        // saat beberapa anggota mengakses task yang sama.
+        $lockedTask = Task::whereKey($task->id)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        $updates = [];
+
+        foreach ([
+            'title',
+            'description',
+            'priority',
+            'color',
+            'start_date',
+            'due_date',
+        ] as $field) {
+            if (array_key_exists($field, $data)) {
+                $updates[$field] = $data[$field];
+            }
         }
 
-        $data = $request->validate([
-            'title'       => 'sometimes|required|string|max:255',
-            'status'      => 'sometimes|nullable|in:backlog,todo,in-progress,done',
-            'priority'    => 'sometimes|nullable|in:sangat-tinggi,tinggi,sedang,rendah,sangat-rendah',
-            'time'        => 'sometimes|nullable|integer|min:0',
-            'isRunning'   => 'sometimes|boolean',
-            'is_running'  => 'sometimes|boolean',
-            'description' => 'sometimes|nullable|string',
-            'color'       => 'sometimes|nullable|string',
-            'start_date'  => 'sometimes|nullable|date',
-            'due_date'    => 'sometimes|nullable|date',
-            'assignees'   => 'sometimes|array',
-            'assignees.*' => 'required|integer|distinct|exists:users,id',
-        ]);
+        $newStatus = $data['status'] ?? $lockedTask->status;
 
-        $assigneeIds = $data['assignees'] ?? null;
+        if (array_key_exists('status', $data)) {
+            $updates['status'] = $newStatus;
+        }
+
+        $requestedRunning = array_key_exists('isRunning', $data)
+            ? $data['isRunning']
+            : ($data['is_running'] ?? $lockedTask->is_running);
+
+        // Task yang selesai tidak boleh terus menghitung waktu.
+        if ($newStatus === 'done') {
+            $requestedRunning = false;
+        }
+
+        $wasRunning = (bool) $lockedTask->is_running;
+        $isRunning = (bool) $requestedRunning;
+        $now = now();
+
+        // Hanya akumulasikan waktu ketika timer benar-benar berhenti.
+        if ($wasRunning && (! $isRunning || $newStatus === 'done')) {
+            $startedAt = $lockedTask->started_at;
+
+            if ($startedAt) {
+                $elapsed = max(
+                    0,
+                    $now->timestamp - $startedAt->timestamp
+                );
+
+                $updates['time'] = (int) $lockedTask->time + $elapsed;
+            }
+
+            $updates['is_running'] = false;
+            $updates['started_at'] = null;
+        } elseif (! $wasRunning && $isRunning) {
+            // Timer baru mulai: jangan menghapus durasi sebelumnya.
+            $updates['is_running'] = true;
+            $updates['started_at'] = $now;
+        } elseif ($wasRunning && $isRunning) {
+            // Timer masih berjalan: pertahankan waktu mulai sebelumnya.
+            $updates['is_running'] = true;
+        } else {
+            $updates['is_running'] = false;
+            $updates['started_at'] = null;
+
+            // Hanya terima nilai time dari frontend ketika timer berhenti.
+            if (array_key_exists('time', $data)) {
+                $updates['time'] = $data['time'] ?? 0;
+            }
+        }
+
+        if ($newStatus === 'done') {
+            $updates['completed_at'] = $lockedTask->completed_at ?? $now;
+        } else {
+            $updates['completed_at'] = null;
+        }
+
+        $lockedTask->update($updates);
 
         if ($assigneeIds !== null) {
-            $this->validateBoardAssignees($board, $assigneeIds);
+            $lockedTask->assignees()->sync($assigneeIds);
         }
 
-        $newStatus = $data['status'] ?? $task->status;
+        return $lockedTask->fresh();
+    });
 
-        // Snapshot untuk notifikasi: apa yang berubah dibandingkan sebelumnya.
-        $oldStatus    = $task->status;
-        $changedFields = $this->changedFields($task, $data, $assigneeIds);
-
-        $running = array_key_exists('isRunning', $data)
-            ? $data['isRunning']
-            : ($data['is_running'] ?? $task->is_running);
-
-        DB::transaction(function () use (
-            $task,
-            $data,
-            $newStatus,
-            $running,
-            $assigneeIds
-        ) {
-            $updates = [];
-
-            foreach ([
-                'title',
-                'description',
-                'priority',
-                'time',
-                'color',
-                'start_date',
-                'due_date',
-            ] as $field) {
-                if (array_key_exists($field, $data)) {
-                    $updates[$field] = $data[$field];
-                }
-            }
-
-            if (array_key_exists('status', $data)) {
-                $updates['status'] = $newStatus;
-            }
-
-            if (
-                array_key_exists('isRunning', $data)
-                || array_key_exists('is_running', $data)
-            ) {
-                $updates['is_running'] = $running;
-            }
-
-            if ($newStatus === 'done') {
-                $updates['completed_at'] = $task->completed_at ?? now();
-            } else {
-                $updates['completed_at'] = null;
-            }
-
-            if (! empty($updates)) {
-                $task->update($updates);
-            }
-
-            // Hanya mengganti assignee jika field dikirim oleh frontend.
-            // Array kosong berarti menghapus semua assignee.
-            if ($assigneeIds !== null) {
-                $task->assignees()->sync($assigneeIds);
-            }
-        });
-
-        $fresh = $task->fresh();
-
-        // Notifikasi ke anggota lain. Timer (time/is_running) sengaja diabaikan
-        // karena berubah terus saat tugas dikerjakan.
-        if ($oldStatus !== $fresh->status) {
-            NotificationService::taskStatusChanged(
-                $board, $request->user(), $fresh->id, $fresh->title, $oldStatus, $fresh->status
-            );
-        }
-
-        NotificationService::taskUpdated(
-            $board, $request->user(), $fresh->id, $fresh->title, $changedFields
+    if ($oldStatus !== $fresh->status) {
+        NotificationService::taskStatusChanged(
+            $board,
+            $request->user(),
+            $fresh->id,
+            $fresh->title,
+            $oldStatus,
+            $fresh->status
         );
-
-        return response()->json([
-            'success' => true,
-            'task' => $fresh->load('assignees'),
-        ]);
     }
+
+    NotificationService::taskUpdated(
+        $board,
+        $request->user(),
+        $fresh->id,
+        $fresh->title,
+        $changedFields
+    );
+
+    // Kembalikan durasi berjalan yang sudah dihitung,
+    // tanpa menyimpannya setiap detik ke database.
+    if ($fresh->is_running && $fresh->started_at) {
+        $fresh->time = (int) $fresh->time + max(
+            0,
+            now()->timestamp - $fresh->started_at->timestamp
+        );
+    }
+
+    return response()->json([
+        'success' => true,
+        'task' => $fresh->load('assignees'),
+    ]);
+}
 
     /**
      * Daftar bidang yang benar-benar berubah (untuk notifikasi).

@@ -1,0 +1,35 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        // Akun yang masuk lewat Google tidak punya kata sandi.
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('password')->nullable()->change();
+        });
+
+        Schema::create('social_accounts', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->string('provider', 30);
+            $table->string('provider_id');
+            $table->timestamps();
+
+            $table->unique(['provider', 'provider_id']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('social_accounts');
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('password')->nullable(false)->change();
+        });
+    }
+};

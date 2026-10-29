@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './AppMain.jsx'
 import './index.css'
 import './ui.css'
+import './glass.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

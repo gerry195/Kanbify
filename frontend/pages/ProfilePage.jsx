@@ -113,7 +113,7 @@ export default function ProfilePage() {
       <div style={{ maxWidth: 920, margin: '0 auto' }}>
         <div style={{ fontSize: 11.5, color: 'var(--k-faint)', marginBottom: 5 }}>
           Home <span style={{ margin: '0 3px' }}>›</span>
-          <span style={{ color: 'var(--k-orange)', fontWeight: 600 }}>Pengaturan</span>
+          <span style={{ color: 'var(--k-link)', fontWeight: 600 }}>Pengaturan</span>
         </div>
 
         <h1 className="k-display" style={{ margin: '0 0 4px', fontSize: 28, fontWeight: 600 }}>

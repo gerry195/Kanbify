@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../utils/api';
+import { useAuth } from '../contexts/AuthContext';
 import BoardCard from '../components/BoardCard';
 import CreateBoardModal from '../components/CreateBoardModal';
 import NotificationBell from '../components/NotificationBell';
+import {
+  StatusBars,
+  BoardProgress,
+  DeadlineList,
+  MiniCalendar
+} from '../components/DashboardPanels';
 
 import {
   ClipboardList,
@@ -15,120 +22,63 @@ import {
   ArrowRight
 } from 'lucide-react';
 
-/* =========================================================
-   STAT CARD
-   ========================================================= */
+const STAT_TILES = [
+  { icon: ClipboardList, tag: 'Task', key: 'total_tasks' },
+  { icon: FilePenLine, tag: 'To Do', key: 'todo_tasks' },
+  { icon: Timer, tag: 'On Progress', key: 'in_progress_tasks' },
+  { icon: CircleCheck, tag: 'Done', key: 'completed_tasks' }
+];
 
-function StatCard({ icon: Icon, label, value, tag }) {
+function StatCard({ icon: Icon, tag, value }) {
   return (
-    <div
-      style={{
-        flex: '1 1 190px',
-        minWidth: 0,
-        background: '#ffffff',
-        border: '1px solid #e8e5de',
-        borderRadius: 14,
-        padding: '16px 18px',
-        boxSizing: 'border-box'
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 14
-        }}
-      >
-        <div
-          style={{
-            width: 35,
-            height: 35,
-            borderRadius: 10,
-            background: '#fff1e7',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
-          }}
-        >
-          <Icon
-            size={17}
-            strokeWidth={2}
-            color="#ff6b0b"
-          />
-        </div>
-
-        <span
-          style={{
-            fontSize: 9.5,
-            fontWeight: 600,
-            color: '#99958e',
-            letterSpacing: '0.3px'
-          }}
-        >
-          {tag}
+    <div className="k-frost k-stat">
+      <div className="k-stat-top">
+        <span className="k-stat-icon">
+          <Icon size={18} strokeWidth={2} />
         </span>
+        <span className="k-stat-tag">{tag}</span>
       </div>
 
-      <div
-        style={{
-          fontSize: 24,
-          fontWeight: 700,
-          lineHeight: 1,
-          color: '#151515'
-        }}
-      >
-        {value}
-      </div>
-
-      <div
-        style={{
-          fontSize: 11.5,
-          color: '#8e8b85',
-          marginTop: 6
-        }}
-      >
-        {label}
-      </div>
+      <div className="k-stat-value k-num">{value}</div>
+      <div className="k-stat-label">Di semua board</div>
     </div>
   );
 }
 
-/* =========================================================
-   DASHBOARD
-   ========================================================= */
+function normalizeTasks(data) {
+  const list = Array.isArray(data) ? data : data?.data ?? [];
+
+  return list.map((t) => ({
+    id: t.id,
+    title: t.title,
+    status: t.status,
+    due: t.due_date ? String(t.due_date).slice(0, 10) : null,
+    boardId: t.board_id ?? t.board?.id,
+    boardName: t.board?.name ?? ''
+  }));
+}
 
 export default function DashboardPage({
   onSelectBoard,
   onNavigate,
   onOpenStats
 }) {
+  const { user } = useAuth();
+
   const [boards, setBoards] = useState([]);
   const [stats, setStats] = useState(null);
+  const [tasks, setTasks] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  /* =======================================================
-     CREATE BOARD STATE
-     ======================================================= */
-
   const [showModal, setShowModal] = useState(false);
-
-  /* =======================================================
-     JOIN BOARD STATE
-     ======================================================= */
 
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState('');
   const [joinSuccess, setJoinSuccess] = useState('');
-
-  /* =======================================================
-     LOAD DATA
-     ======================================================= */
 
   useEffect(() => {
     loadAll();
@@ -139,13 +89,16 @@ export default function DashboardPage({
       setLoading(true);
       setError('');
 
-      const [boardsData, statsData] = await Promise.all([
+      // Panel tugas hanya pelengkap; kegagalannya tidak boleh menjatuhkan dashboard.
+      const [boardsData, statsData, taskData] = await Promise.all([
         api.getBoards(),
-        api.getStats()
+        api.getStats(),
+        api.getCalendarTasks().catch(() => [])
       ]);
 
       setBoards(boardsData);
       setStats(statsData);
+      setTasks(normalizeTasks(taskData));
     } catch (err) {
       setError(
         err.message || 'Gagal memuat dashboard'
@@ -154,10 +107,6 @@ export default function DashboardPage({
       setLoading(false);
     }
   };
-
-  /* =======================================================
-     JOIN BOARD
-     ======================================================= */
 
   const handleJoinBoard = async (e) => {
     e.preventDefault();
@@ -183,10 +132,7 @@ export default function DashboardPage({
 
       setInviteCode('');
 
-      /*
-       * Tunggu sebentar supaya user
-       * sempat melihat pesan berhasil.
-       */
+      // Beri waktu user membaca pesan berhasil sebelum modal tertutup.
       setTimeout(async () => {
         setShowJoinModal(false);
         setJoinSuccess('');
@@ -203,10 +149,6 @@ export default function DashboardPage({
     }
   };
 
-  /* =======================================================
-     RESET JOIN MODAL
-     ======================================================= */
-
   const resetJoinModal = () => {
     setInviteCode('');
     setJoinError('');
@@ -215,31 +157,20 @@ export default function DashboardPage({
     setShowJoinModal(false);
   };
 
-  /* =======================================================
-     LOADING
-     ======================================================= */
+  const openBoardById = (id) => {
+    const board = boards.find((b) => b.id === id);
+    if (board && onSelectBoard) {
+      onSelectBoard(board.id, board.name, board.role);
+    }
+  };
 
   if (loading) {
     return (
-      <div
-        style={{
-          minHeight: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#8e8b85',
-          fontFamily: 'system-ui, sans-serif',
-          fontSize: 13
-        }}
-      >
+      <div className="k-page k-dash-loading">
         Memuat Dashboard Kanbify...
       </div>
     );
   }
-
-  /* =======================================================
-     BOARD DATA
-     ======================================================= */
 
   const starredBoards = boards.filter(
     (board) => board.starred
@@ -250,180 +181,50 @@ export default function DashboardPage({
       ? starredBoards
       : boards;
 
-  /* =======================================================
-     PAGE
-     ======================================================= */
+  const firstName = (user?.fullname || user?.username || '').split(' ')[0];
+  const todayLabel = new Date().toLocaleDateString('id-ID', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  });
 
   return (
-    <div
-      style={{
-        width: '100%',
-        minHeight: '100%',
-        background: '#f4f3ee',
-        padding: '22px 22px 50px',
-        boxSizing: 'border-box',
-        fontFamily:
-          'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-      }}
-    >
+    <div className="k-page">
+      <div className="k-dash">
 
-      {/* =================================================
-          PAGE HEADER
-          ================================================= */}
+        <div className="k-dash-head">
+          <div>
+            <h1 className="k-dash-title k-display">
+              {firstName ? `Selamat datang, ${firstName}` : 'Dashboard Utama'}
+            </h1>
+            <p className="k-dash-sub">Dashboard utama · {todayLabel}</p>
+          </div>
 
-      <div
-        style={{
-          maxWidth: 1100,
-          margin: '0 auto'
-        }}
-      >
-
-        {/* Breadcrumb */}
-
-        <div
-          style={{
-            fontSize: 11.5,
-            color: '#aaa69e',
-            marginBottom: 5
-          }}
-        >
-          Home
-
-          <span
-            style={{
-              margin: '0 4px',
-              color: '#c5c1b9'
-            }}
-          >
-            ›
-          </span>
-
-          <span
-            style={{
-              color: '#ff6b0b',
-              fontWeight: 600
-            }}
-          >
-            Dashboard
-          </span>
-        </div>
-
-        {/* Title + Actions */}
-
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: 20,
-            marginBottom: 28
-          }}
-        >
-
-          <h1
-            style={{
-              margin: 0,
-              fontSize: 24,
-              lineHeight: 1.15,
-              fontWeight: 700,
-              color: '#151515',
-              letterSpacing: '-0.4px'
-            }}
-          >
-            Dashboard Utama
-          </h1>
-
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              flexShrink: 0
-            }}
-          >
-
-            {/* Notification */}
-
-            <NotificationBell
-              onOpenBoard={(id) => {
-                const b = boards.find((x) => x.id === id);
-                if (b && onSelectBoard) {
-                  onSelectBoard(b.id, b.name, b.role);
-                }
-              }}
-            />
-
-            {/* Join Board */}
+          <div className="k-dash-actions">
+            <NotificationBell onOpenBoard={openBoardById} />
 
             <button
               type="button"
-              onClick={() =>
-                setShowJoinModal(true)
-              }
-              style={{
-                border: '1px solid #e5e1d9',
-                background: '#ffffff',
-                color: '#3f3c37',
-                borderRadius: 10,
-                padding: '10px 14px',
-                fontSize: 12.5,
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 7
-              }}
+              className="k-btn"
+              onClick={() => setShowJoinModal(true)}
             >
-              <UserPlus
-                size={15}
-                strokeWidth={1.9}
-              />
-
+              <UserPlus size={15} strokeWidth={1.9} />
               Gabung Board
             </button>
 
-            {/* Create Board */}
-
             <button
               type="button"
-              onClick={() =>
-                setShowModal(true)
-              }
-              style={{
-                border: 'none',
-                background: '#ff6b0b',
-                color: '#ffffff',
-                borderRadius: 10,
-                padding: '11px 16px',
-                fontSize: 12.5,
-                fontWeight: 650,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 7,
-                boxShadow:
-                  '0 5px 12px rgba(255,107,11,0.22)'
-              }}
+              className="k-btn k-btn-primary"
+              onClick={() => setShowModal(true)}
             >
-              <span
-                style={{
-                  fontSize: 17,
-                  lineHeight: 1,
-                  fontWeight: 500
-                }}
-              >
+              <span style={{ fontSize: 17, lineHeight: 1, fontWeight: 500 }}>
                 +
               </span>
-
               Buat Board Baru
             </button>
-
           </div>
         </div>
-
-        {/* =================================================
-            ERROR
-            ================================================= */}
 
         {error && (
           <div
@@ -445,124 +246,44 @@ export default function DashboardPage({
           </div>
         )}
 
-        {/* =================================================
-            STATISTICS
-            ================================================= */}
+        <div className="k-dash-grid">
+          {STAT_TILES.map((tile) => (
+            <StatCard
+              key={tile.key}
+              icon={tile.icon}
+              tag={tile.tag}
+              value={stats?.[tile.key] ?? 0}
+            />
+          ))}
 
-        <div
-          style={{
-            display: 'flex',
-            gap: 16,
-            flexWrap: 'wrap',
-            marginBottom: 32
-          }}
-        >
-
-          <StatCard
-            icon={ClipboardList}
-            tag="TASK"
-            value={
-              stats?.total_tasks ?? 0
-            }
-            label="Aktif minggu ini"
+          <StatusBars stats={stats} />
+          <BoardProgress stats={stats} onOpenBoard={openBoardById} />
+          <DeadlineList
+            tasks={tasks}
+            onOpenBoard={openBoardById}
+            onOpenCalendar={() => onNavigate && onNavigate('schedule')}
           />
-
-          <StatCard
-            icon={FilePenLine}
-            tag="TO DO"
-            value={
-              stats?.todo_tasks ?? 0
-            }
-            label="Aktif minggu ini"
-          />
-
-          <StatCard
-            icon={Timer}
-            tag="ON PROGRESS"
-            value={
-              stats?.in_progress_tasks ?? 0
-            }
-            label="Aktif minggu ini"
-          />
-
-          <StatCard
-            icon={CircleCheck}
-            tag="DONE"
-            value={
-              stats?.completed_tasks ?? 0
-            }
-            label="Aktif minggu ini"
-          />
-
+          <MiniCalendar tasks={tasks} onOpenBoard={openBoardById} />
         </div>
 
-        {/* =================================================
-            STARRED BOARD HEADER
-            ================================================= */}
-
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-end',
-            gap: 20,
-            marginBottom: 15
-          }}
-        >
-
+        <div className="k-frost k-board-head">
           <div>
-
-            <h2
-              style={{
-                margin: 0,
-                fontSize: 15.5,
-                fontWeight: 700,
-                color: '#151515'
-              }}
-            >
-              Stared Board
-            </h2>
-
-            <p
-              style={{
-                margin:
-                  '4px 0 0 0',
-                fontSize: 11.5,
-                color: '#a09c94'
-              }}
-            >
+            <h2 className="k-display">Stared Board</h2>
+            <p>
               {starredBoards.length > 0
                 ? 'Kelola proyek kolaboratif tim Anda secara visual'
                 : 'Belum ada board yang di-star — menampilkan semua board Anda'}
             </p>
-
           </div>
 
           <button
             type="button"
-            onClick={() =>
-              onNavigate &&
-              onNavigate('allboards')
-            }
-            style={{
-              border: 'none',
-              background: 'transparent',
-              color: '#ff6b0b',
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: 'pointer',
-              padding: '4px 0',
-              whiteSpace: 'nowrap'
-            }}
+            className="k-link"
+            onClick={() => onNavigate && onNavigate('allboards')}
           >
             Lihat Semua Board →
           </button>
-
         </div>
-
-        {/* =================================================
-            BOARD GRID
-            ================================================= */}
 
         {boardsToShow.length === 0 ? (
 

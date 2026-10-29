@@ -337,7 +337,7 @@ export default function StatsPage({ initialBoardId, onOpenBoard }) {
       <div style={{ maxWidth: 1120, margin: '0 auto' }}>
         <div style={{ fontSize: 11.5, color: 'var(--k-faint)', marginBottom: 5 }}>
           Home <span style={{ margin: '0 3px' }}>›</span>
-          <span style={{ color: 'var(--k-orange)', fontWeight: 600 }}>
+          <span style={{ color: 'var(--k-link)', fontWeight: 600 }}>
             Statistik Tim
           </span>
         </div>

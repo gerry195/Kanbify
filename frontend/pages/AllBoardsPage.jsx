@@ -90,7 +90,7 @@ export default function AllBoardsPage({ onSelectBoard, onOpenStats }) {
           style={{ fontSize: 11.5, color: 'var(--k-faint)', marginBottom: 5 }}
         >
           Home <span style={{ margin: '0 3px' }}>›</span>
-          <span style={{ color: 'var(--k-orange)', fontWeight: 600 }}>
+          <span style={{ color: 'var(--k-link)', fontWeight: 600 }}>
             Semua Board
           </span>
         </div>

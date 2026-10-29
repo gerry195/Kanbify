@@ -646,11 +646,14 @@ function AppContent() {
 
       {currentPage === 'members' && (
         <div
+          className="k-frost"
           style={{
-            padding: 60,
+            maxWidth: 560,
+            margin: '48px auto',
+            padding: 48,
             textAlign: 'center',
-            color: '#8a8a86',
-            fontFamily: 'system-ui'
+            color: 'var(--k-ink-2)',
+            fontFamily: 'var(--k-font-body)'
           }}
         >
           <div

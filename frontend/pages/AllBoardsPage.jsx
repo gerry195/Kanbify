@@ -84,7 +84,7 @@ export default function AllBoardsPage({ onSelectBoard, onOpenStats }) {
   }
 
   return (
-    <div className="k-page" style={{ padding: '26px 34px 50px' }}>
+    <div className="k-page k-staged" style={{ padding: '26px 34px 50px' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <div
           style={{ fontSize: 11.5, color: 'var(--k-faint)', marginBottom: 5 }}
@@ -261,6 +261,7 @@ export default function AllBoardsPage({ onSelectBoard, onOpenStats }) {
           </div>
         ) : (
           <div
+            className="k-stagger"
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(285px, 1fr))',

@@ -12,7 +12,7 @@ Aplikasi manajemen tugas berbasis papan Kanban untuk tim kecil. Anggota board bi
 - **Gantt Chart**: jadwal tugas dari tanggal mulai sampai deadline, dengan zoom Minggu/Bulan dan garis hari ini.
 - **Files**: unggah dan unduh file per board.
 - **Statistik tim**: statistik per board (distribusi status, beban per anggota, prioritas dan keterlambatan, waktu terlacak).
-- **Kalender**: tugas semua board dalam tampilan bulanan.
+- **Kalender**: kalender tenggat semua board ada di bawah panel statistik Dashboard.
 - **Notifikasi**: lonceng di dashboard berisi aktivitas anggota (status berubah, tugas diedit atau dihapus). Ringkasannya juga dikirim ke email anggota tiap 10 menit.
 
 ## Teknologi

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../utils/api';
 import { LogOut, Upload, Trash2, Check, TriangleAlert } from 'lucide-react';
+import { toast } from '../components/Toast';
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuth();
@@ -59,8 +60,10 @@ export default function ProfilePage() {
       setSavedName(fullname);
       setSavedAvatar(avatar);
       setMessage('✓ Profil berhasil diperbarui.');
+      toast.success('Profil berhasil diperbarui');
     } catch (error) {
       setMessage('✗ Gagal memperbarui profil: ' + error.message);
+      toast.error('Gagal memperbarui profil', { detail: error.message });
     } finally {
       setLoading(false);
     }

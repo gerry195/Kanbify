@@ -4,6 +4,7 @@ import whiteboardBg from "./assets/c69c6da2680c47ae26f097b37212ae09.jpg";
 
 import { api } from "./utils/api.js";
 import { Plus } from "lucide-react";
+import { toast } from "./components/Toast.jsx";
 import BoardGantt from "./components/BoardGantt.jsx";
 import TaskCard from "./components/TaskCard.jsx";
 import { MemberStack, ToolButton, ToolSearch } from "./components/BoardHeaderBits.jsx";
@@ -506,6 +507,8 @@ function MembersModal({ boardId, onClose }) {
 
       await api.addBoardMember(boardId, username.trim(), newRole);
 
+      toast.success(`${username.trim()} ditambahkan ke board`);
+
       setUsername('');
 
       load();
@@ -526,9 +529,9 @@ function MembersModal({ boardId, onClose }) {
 
   const handleRoleChange = async (userId, role) => {
 
-    try { await api.updateBoardMemberRole(boardId, userId, role); load(); }
+    try { await api.updateBoardMemberRole(boardId, userId, role); toast.success('Peran anggota diperbarui'); load(); }
 
-    catch (err) { alert(err.message); }
+    catch (err) { toast.error(err.message || 'Gagal mengubah peran anggota'); }
 
   };
 
@@ -538,9 +541,9 @@ function MembersModal({ boardId, onClose }) {
 
     if (!window.confirm('Keluarkan member ini dari board?')) return;
 
-    try { await api.removeBoardMember(boardId, userId); load(); }
+    try { await api.removeBoardMember(boardId, userId); toast.success('Anggota dikeluarkan dari board'); load(); }
 
-    catch (err) { alert(err.message); }
+    catch (err) { toast.error(err.message || 'Gagal mengeluarkan anggota'); }
 
   };
 
@@ -670,7 +673,8 @@ export default function App({ boardId, boardName, role = 'member', onBackToDashb
       const fresh = await api.getBoard(boardId);
       setBoardAppearance({ background: fresh.background || 'whiteboard', background_image: fresh.background_image || null });
       setAppearanceFile(null); setShowAppearance(false);
-    } catch (err) { alert(err.message || 'Gagal menyimpan background board'); }
+      toast.success('Latar belakang board disimpan');
+    } catch (err) { toast.error(err.message || 'Gagal menyimpan background board'); }
     finally { setAppearanceSaving(false); }
   };
   const boardBackgroundStyle = boardAppearance.background_image
@@ -747,7 +751,8 @@ export default function App({ boardId, boardName, role = 'member', onBackToDashb
       const newFile = result?.file || result;
       if (newFile?.id) setBoardFiles(prev => [newFile, ...prev.filter(item => String(item.id) !== String(newFile.id))]);
       else setBoardFiles(await api.getBoardFiles(boardId).then(data => Array.isArray(data) ? data : (data?.files || [])));
-    } catch (err) { setFileError(err.message || "Gagal mengunggah file."); }
+      toast.success('File berhasil diunggah', { detail: file.name });
+    } catch (err) { setFileError(err.message || "Gagal mengunggah file."); toast.error(err.message || 'Gagal mengunggah file'); }
     finally { setFileUploading(false); }
   };
 
@@ -761,8 +766,8 @@ export default function App({ boardId, boardName, role = 'member', onBackToDashb
 
   const removeBoardFile = async (file) => {
     if (!window.confirm(`Hapus file ${file.original_name || file.name || "ini"}?`)) return;
-    try { await api.deleteBoardFile(boardId, file.id); setBoardFiles(prev => prev.filter(item => String(item.id) !== String(file.id))); }
-    catch (err) { setFileError(err.message || "Gagal menghapus file."); }
+    try { await api.deleteBoardFile(boardId, file.id); setBoardFiles(prev => prev.filter(item => String(item.id) !== String(file.id))); toast.success('File dihapus'); }
+    catch (err) { setFileError(err.message || "Gagal menghapus file."); toast.error(err.message || 'Gagal menghapus file'); }
   };
 
   // Load board members for the multi-select assignee field.
@@ -1005,7 +1010,7 @@ const openTaskDetails = (quest) => {
     const currentTask = quests.find(q => String(q.id) === String(selectedTaskId));
     if (!currentTask || !taskEditForm || savingTaskEdit) return;
     if (!taskEditForm.title.trim()) {
-      alert("Nama task wajib diisi.");
+      toast.error("Nama task wajib diisi");
       return;
     }
 
@@ -1044,9 +1049,10 @@ const openTaskDetails = (quest) => {
       };
       setQuests(prev => prev.map(q => String(q.id) === String(currentTask.id) ? updated : q));
       setTaskModalTab("detail");
+      toast.success("Perubahan tugas disimpan");
     } catch (err) {
       console.error("Gagal memperbarui task:", err);
-      alert(err.message || "Gagal menyimpan perubahan task.");
+      toast.error(err.message || "Gagal menyimpan perubahan task");
     } finally {
       setSavingTaskEdit(false);
     }
@@ -1056,7 +1062,7 @@ const openTaskDetails = (quest) => {
 
   if (!boardId) {
 
-    alert("Board belum dimuat. Coba refresh.");
+    toast.error("Board belum dimuat. Coba refresh halaman.");
 
     return;
 
@@ -1085,7 +1091,7 @@ const openTaskDetails = (quest) => {
 
     const colId = newStatus || addModal.status;
     if (newStartDate && newDueDate && newDueDate < newStartDate) {
-      alert("Deadline tidak boleh lebih awal daripada tanggal mulai.");
+      toast.error("Deadline tidak boleh lebih awal daripada tanggal mulai");
       return;
     }
     const shouldRun = colId === "in-progress";
@@ -1129,9 +1135,10 @@ const openTaskDetails = (quest) => {
         })));
       }
       setAddModal(null);
+      toast.success("Tugas berhasil dibuat", { detail: newTitle.trim() });
     } catch (err) {
       console.error("Gagal buat task:", err);
-      alert(err.message || "Gagal menyimpan tugas ke database.");
+      toast.error(err.message || "Gagal menyimpan tugas ke database");
     } finally {
       setSavingTask(false);
     }
@@ -1148,12 +1155,14 @@ const openTaskDetails = (quest) => {
       setQuests(prev => prev.filter(q => String(q.id) !== String(id)));
       if (String(selectedTaskId) === String(id)) setSelectedTaskId(null);
       if (String(taskMenuOpenId) === String(id)) setTaskMenuOpenId(null);
-r
+
+      toast.success("Tugas dihapus");
+
     } catch (err) {
 
       console.error("Gagal hapus task:", err);
 
-      alert("Gagal menghapus tugas.");
+      toast.error("Gagal menghapus tugas");
 
     }
 
@@ -1206,6 +1215,12 @@ r
     const id = e.dataTransfer.getData("text/plain");
 
     if (!id) return;
+
+    const dropped = quests.find(q => String(q.id) === String(id));
+    if (dropped && dropped.status !== targetStatus) {
+      const colLabel = (FIXED_COLUMNS.find(c => c.id === targetStatus) || {}).title || (targetStatus === "backlog" ? "Backlog" : targetStatus);
+      toast.success(`Tugas dipindah ke ${colLabel}`, { detail: dropped.title });
+    }
 
     setQuests(prev => prev.map(q => {
 

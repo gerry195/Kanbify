@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { api } from '../utils/api';
 
 import { RefreshCw, FolderOpen, X } from 'lucide-react';
+import { toast } from './Toast';
 
 export const BOARD_CATEGORIES = [
   'Umum',
@@ -44,6 +45,7 @@ export default function CreateBoardModal({ onClose, onCreated }) {
       if (image) formData.append('cover_image', image);
 
       await api.createBoard(formData);
+      toast.success('Board berhasil dibuat', { detail: name.trim() });
 
       if (onCreated) await onCreated();
       onClose();

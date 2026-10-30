@@ -6,7 +6,6 @@ import {
   Home,
   LayoutGrid,
   ChartNoAxesColumnIncreasing,
-  CalendarDays,
   Users,
   Settings
 } from 'lucide-react';
@@ -15,7 +14,6 @@ const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: Home },
   { id: 'allboards', label: 'Semua Board', icon: LayoutGrid },
   { id: 'stats', label: 'Statistik Tim', icon: ChartNoAxesColumnIncreasing },
-  { id: 'schedule', label: 'Calendar', icon: CalendarDays },
   { id: 'members', label: 'Anggota', icon: Users },
   { id: 'profile', label: 'Pengaturan', icon: Settings }
 ];

@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const STATUSES = [
-  { id: 'backlog', label: 'Backlog', color: '#b9b5a8', statKey: 'backlog_tasks' },
+  { id: 'backlog', label: 'Backlog', color: '#a29d8d', statKey: 'backlog_tasks' },
   { id: 'todo', label: 'To Do', color: '#3b73d8', statKey: 'todo_tasks' },
   { id: 'in-progress', label: 'On Progress', color: '#f97316', statKey: 'in_progress_tasks' },
   { id: 'done', label: 'Done', color: '#2f9e5f', statKey: 'completed_tasks' }
@@ -59,13 +59,25 @@ function Panel({ className, dark, title, sub, badge, children }) {
   );
 }
 
+// Skala sumbu Y dibulatkan ke atas supaya batang tertinggi tidak menempel ke tepi atas.
+function niceScale(max) {
+  const step = max <= 4 ? 1 : max <= 10 ? 2 : max <= 20 ? 5 : Math.ceil(max / 4 / 10) * 10;
+  const top = Math.ceil(max / step) * step;
+  const ticks = [];
+
+  for (let v = 0; v <= top; v += step) ticks.push(v);
+
+  return { top, ticks };
+}
+
 export function StatusBars({ stats }) {
   const counts = STATUSES.map((s) => ({
     ...s,
     count: Number(stats?.[s.statKey] ?? 0)
   }));
   const total = counts.reduce((sum, s) => sum + s.count, 0);
-  const max = Math.max(...counts.map((s) => s.count), 1);
+  const { top, ticks } = niceScale(Math.max(...counts.map((s) => s.count), 1));
+  const pct = (v) => (v / top) * 100;
 
   return (
     <Panel
@@ -79,22 +91,49 @@ export function StatusBars({ stats }) {
           sebarannya muncul di sini.
         </p>
       ) : (
-        <div className="k-bars" role="list">
-          {counts.map((s) => (
-            <div className="k-bar-col" role="listitem" key={s.id}>
-              <span className="k-bar-num k-num">{s.count}</span>
-              <div className="k-bar-track">
+        <div
+          className="k-chart"
+          role="img"
+          aria-label={`Jumlah tugas per status: ${counts
+            .map((s) => `${s.label} ${s.count}`)
+            .join(', ')}`}
+        >
+          <div className="k-chart-y" aria-hidden="true">
+            {ticks.map((t) => (
+              <span key={t} className="k-chart-tick" style={{ bottom: `${pct(t)}%` }}>
+                {t}
+              </span>
+            ))}
+          </div>
+
+          <div className="k-chart-plot">
+            {ticks.slice(1).map((t) => (
+              <span key={t} className="k-chart-grid" style={{ bottom: `${pct(t)}%` }} />
+            ))}
+
+            {counts.map((s, i) => (
+              <div className="k-chart-col" key={s.id} style={{ '--i': i }}>
                 <div
-                  className="k-bar-fill"
-                  style={{
-                    height: s.count > 0 ? `${Math.max((s.count / max) * 100, 8)}%` : 0,
-                    background: s.color
-                  }}
+                  className={`k-chart-bar${s.count === 0 ? ' zero' : ''}`}
+                  style={{ height: `${pct(s.count)}%`, background: s.color }}
                 />
+                <span
+                  className="k-chart-val k-num"
+                  style={{ bottom: `calc(${pct(s.count)}% + 8px)` }}
+                >
+                  {s.count}
+                </span>
               </div>
-              <span className="k-bar-name">{s.label}</span>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          <div className="k-chart-x" aria-hidden="true">
+            {counts.map((s) => (
+              <span key={s.id} className="k-chart-name">
+                {s.label}
+              </span>
+            ))}
+          </div>
         </div>
       )}
     </Panel>
@@ -152,7 +191,7 @@ export function BoardProgress({ stats, onOpenBoard }) {
   );
 }
 
-export function DeadlineList({ tasks, onOpenBoard, onOpenCalendar }) {
+export function DeadlineList({ tasks, onOpenBoard }) {
   const open = useMemo(
     () =>
       tasks
@@ -201,12 +240,6 @@ export function DeadlineList({ tasks, onOpenBoard, onOpenCalendar }) {
           })}
         </div>
       )}
-
-      <div className="k-task-foot">
-        <button type="button" className="k-link" onClick={onOpenCalendar}>
-          Buka kalender →
-        </button>
-      </div>
     </Panel>
   );
 }

@@ -21,6 +21,7 @@ import {
   X,
   ArrowRight
 } from 'lucide-react';
+import { toast } from '../components/Toast';
 
 const STAT_TILES = [
   { icon: ClipboardList, tag: 'Task', key: 'total_tasks' },
@@ -131,6 +132,7 @@ export default function DashboardPage({
       );
 
       setInviteCode('');
+      toast.success('Berhasil bergabung ke board');
 
       // Beri waktu user membaca pesan berhasil sebelum modal tertutup.
       setTimeout(async () => {
@@ -190,7 +192,7 @@ export default function DashboardPage({
   });
 
   return (
-    <div className="k-page">
+    <div className="k-page k-staged">
       <div className="k-dash">
 
         <div className="k-dash-head">
@@ -261,7 +263,6 @@ export default function DashboardPage({
           <DeadlineList
             tasks={tasks}
             onOpenBoard={openBoardById}
-            onOpenCalendar={() => onNavigate && onNavigate('schedule')}
           />
           <MiniCalendar tasks={tasks} onOpenBoard={openBoardById} />
         </div>
@@ -358,6 +359,7 @@ export default function DashboardPage({
         ) : (
 
           <div
+            className="k-stagger"
             style={{
               display: 'grid',
               gridTemplateColumns:

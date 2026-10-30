@@ -17,9 +17,9 @@ import DashboardPage from './pages/DashboardPage';
 import AllBoardsPage from './pages/AllBoardsPage';
 import ProfilePage from './pages/ProfilePage';
 import StatsPage from './pages/StatsPage';
-import SchedulePage from './pages/SchedulePage.jsx';
 import KanbanBoardPage from './App-Kanban';
 import Layout from './components/Layout';
+import { ToastViewport } from './components/Toast';
 import loadingBg from './assets/kanbifyloading.jpg';
 
 import {
@@ -633,14 +633,6 @@ function AppContent() {
       )}
 
       {/* =====================================================
-          SCHEDULE
-      ====================================================== */}
-
-      {currentPage === 'schedule' && ( 
-        <SchedulePage />
-      )}
-
-      {/* =====================================================
           MEMBERS
       ====================================================== */}
 
@@ -718,6 +710,7 @@ export default function App() {
   return (
     <AuthProvider>
       <AppContent />
+      <ToastViewport />
     </AuthProvider>
   );
 }

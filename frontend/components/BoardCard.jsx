@@ -3,6 +3,7 @@ import { api } from '../utils/api';
 import InviteCodeModal from './InviteCodeModal';
 
 import { BarChart3, Trash2, Star, KeyRound } from 'lucide-react';
+import { toast } from './Toast';
 
 const CATEGORY_COLORS = {
   Desain: { bg: '#fee2e2', text: '#b91c1c' },
@@ -74,9 +75,11 @@ export default function BoardCard({
     try {
       const res = await api.toggleStarBoard(board.id);
       setStarred(res.starred);
+      toast.success(res.starred ? 'Board ditandai bintang' : 'Bintang board dilepas', { detail: board.name });
       if (onChanged) onChanged();
-    } catch {
+    } catch (err) {
       setStarred((s) => !s);
+      toast.error(err?.message || 'Gagal mengubah bintang board');
     }
   };
 
@@ -103,9 +106,10 @@ export default function BoardCard({
 
     try {
       await api.deleteBoard(board.id);
+      toast.success('Board dihapus', { detail: board.name });
       if (onChanged) onChanged();
     } catch (err) {
-      alert(err.message || 'Gagal menghapus board');
+      toast.error(err.message || 'Gagal menghapus board');
     }
   };
 

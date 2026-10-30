@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
 import { KeyRound, Copy, Check, X } from 'lucide-react';
+import { toast } from './Toast';
 
 /*
  * Menampilkan kode undangan board. Hanya admin yang menerima
@@ -27,6 +28,7 @@ export default function InviteCodeModal({ board, onClose }) {
     }
 
     setCopied(true);
+    toast.info('Kode undangan disalin');
     setTimeout(() => setCopied(false), 1800);
   };
 

@@ -331,40 +331,82 @@
 .k-link:hover { text-decoration: underline; }
 .k-frost-dark .k-link { color: #ffb27a; }
 
-/* Batang status */
+/* Diagram batang status tugas */
 
-.k-bars {
+.k-chart {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  column-gap: 8px;
+  row-gap: 10px;
+  flex: 1;
+  min-height: 210px;
+  padding-top: 8px;
+}
+.k-chart-y { position: relative; }
+.k-chart-tick {
+  position: absolute;
+  right: 0;
+  transform: translateY(50%);
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 600;
+  color: var(--k-muted);
+}
+.k-chart-plot {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  flex: 1;
-  min-height: 190px;
+  column-gap: 14px;
+  padding: 0 8px;
+  border-bottom: 1.5px solid rgba(27, 26, 23, 0.55);
 }
-.k-bar-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  min-width: 0;
+.k-chart-grid {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed rgba(27, 26, 23, 0.16);
 }
-.k-bar-num { font-size: 15px; font-weight: 700; }
-.k-bar-track {
-  width: 100%;
-  max-width: 44px;
-  flex: 1;
+.k-chart-col {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: flex-end;
-  border-radius: 999px;
-  background: rgba(27, 26, 23, 0.1);
-  overflow: hidden;
+  justify-content: center;
 }
-.k-bar-fill {
+.k-chart-bar {
   width: 100%;
-  border-radius: 999px;
-  transition: height 0.5s ease;
+  max-width: 48px;
+  border-radius: 6px 6px 0 0;
+  transform-origin: bottom;
+  animation: k-bar-grow 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 90ms + 120ms);
 }
-.k-bar-name { font-size: 11.5px; font-weight: 600; color: var(--k-ink-2); text-align: center; }
+.k-chart-bar.zero { height: 3px !important; border-radius: 0; opacity: 0.55; }
+.k-chart-val {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 15px;
+  line-height: 1;
+  font-weight: 700;
+  animation: k-fade 0.4s ease backwards;
+  animation-delay: calc(var(--i, 0) * 90ms + 520ms);
+}
+.k-chart-x {
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: 14px;
+  padding: 0 8px;
+}
+.k-chart-name {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--k-ink-2);
+  text-align: center;
+}
 
 /* Progres board */
 
@@ -550,9 +592,166 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .k-bar-fill,
   .k-nav-item,
   .k-prow { transition: none; }
 }
 
 .k-prow .k-bar { display: block; }
+
+
+/* ---------- Animasi halaman ----------
+   Tujuan: memberi tahu mata bahwa konten baru masuk saat pindah halaman.
+   Hanya terjadi sekali saat halaman muncul, tidak ada gerak yang berulang.
+   fill-mode "backwards" menjaga elemen tanpa transform setelah animasi selesai,
+   jadi modal fixed dan drag-and-drop di dalam halaman tidak terpengaruh. */
+
+@keyframes k-rise {
+  from { opacity: 0; transform: translateY(16px); }
+}
+@keyframes k-fade {
+  from { opacity: 0; }
+}
+@keyframes k-bar-grow {
+  from { transform: scaleY(0); }
+}
+@keyframes k-grow-x {
+  from { transform: scaleX(0); }
+}
+@keyframes k-toast-in {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+}
+@keyframes k-toast-out {
+  to { opacity: 0; transform: translateX(24px); }
+}
+@keyframes k-toast-timer {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+.k-content > * {
+  animation: k-rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/* Halaman yang anaknya masuk bergantian: halamannya sendiri hanya memudar. */
+.k-content > .k-staged {
+  animation-name: k-fade;
+  animation-duration: 0.25s;
+}
+
+.k-staged .k-dash-head,
+.k-staged .k-dash-grid > *,
+.k-staged .k-board-head,
+.k-staged .k-stagger > * {
+  animation: k-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.k-staged .k-dash-head { animation-delay: 0ms; }
+.k-staged .k-dash-grid > :nth-child(1) { animation-delay: 60ms; }
+.k-staged .k-dash-grid > :nth-child(2) { animation-delay: 110ms; }
+.k-staged .k-dash-grid > :nth-child(3) { animation-delay: 160ms; }
+.k-staged .k-dash-grid > :nth-child(4) { animation-delay: 210ms; }
+.k-staged .k-dash-grid > :nth-child(5) { animation-delay: 270ms; }
+.k-staged .k-dash-grid > :nth-child(6) { animation-delay: 330ms; }
+.k-staged .k-dash-grid > :nth-child(7) { animation-delay: 390ms; }
+.k-staged .k-dash-grid > :nth-child(n+8) { animation-delay: 440ms; }
+.k-staged .k-board-head { animation-delay: 480ms; }
+
+.k-staged .k-stagger > :nth-child(1) { animation-delay: 80ms; }
+.k-staged .k-stagger > :nth-child(2) { animation-delay: 130ms; }
+.k-staged .k-stagger > :nth-child(3) { animation-delay: 180ms; }
+.k-staged .k-stagger > :nth-child(4) { animation-delay: 230ms; }
+.k-staged .k-stagger > :nth-child(5) { animation-delay: 280ms; }
+.k-staged .k-stagger > :nth-child(6) { animation-delay: 330ms; }
+.k-staged .k-stagger > :nth-child(n+7) { animation-delay: 380ms; }
+
+/* Isi bar progres board tumbuh dari kiri saat panel muncul. */
+.k-prow .k-bar > span {
+  transform-origin: left;
+  animation: k-grow-x 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.35s backwards;
+}
+
+/* ---------- Toast ---------- */
+
+.k-toasts {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(360px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.k-toast {
+  --tone: var(--k-blue);
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 13px 12px 15px 14px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid rgba(27, 26, 23, 0.1);
+  box-shadow: 0 14px 32px -12px rgba(20, 16, 8, 0.38);
+  color: var(--k-ink);
+  font-family: var(--k-font-body);
+  overflow: hidden;
+  pointer-events: auto;
+  animation: k-toast-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.k-toast.success { --tone: var(--k-green); }
+.k-toast.error { --tone: var(--k-red); }
+.k-toast.leaving { animation: k-toast-out 0.22s ease forwards; }
+
+.k-toast-icon { flex-shrink: 0; margin-top: 1px; color: var(--tone); display: grid; }
+.k-toast-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.k-toast-msg { font-size: 13.5px; font-weight: 600; line-height: 1.35; }
+.k-toast-detail { font-size: 12px; line-height: 1.4; color: var(--k-muted); }
+
+.k-toast-close {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--k-muted);
+  cursor: pointer;
+}
+.k-toast-close:hover { background: rgba(27, 26, 23, 0.07); color: var(--k-ink); }
+.k-toast-close:focus-visible { outline: 2px solid var(--tone); outline-offset: 1px; }
+
+.k-toast-timer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--tone);
+  opacity: 0.8;
+  transform-origin: left;
+  animation: k-toast-timer linear forwards;
+}
+.k-toast:hover .k-toast-timer { animation-play-state: paused; }
+
+@media (max-width: 560px) {
+  .k-toasts { right: 16px; left: 16px; bottom: 16px; width: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .k-content > *,
+  .k-staged .k-dash-head,
+  .k-staged .k-dash-grid > *,
+  .k-staged .k-board-head,
+  .k-staged .k-stagger > *,
+  .k-chart-bar,
+  .k-chart-val,
+  .k-prow .k-bar > span,
+  .k-toast { animation: none; }
+  .k-toast.leaving { animation: none; opacity: 0; }
+  .k-toast-timer { animation: none; display: none; }
+}

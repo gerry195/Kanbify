@@ -1,18 +1,18 @@
 import React, { useEffect, useRef } from 'react';
 import { STAGE_IMAGE } from '../theme';
+import LogoMark from './LogoMark';
 import '../splash.css';
 
 /*
- * Splash screen. Satu kartu pindah To Do -> Doing -> Done, sekaligus jadi
- * penanda loading. Selesai kalau animasi sudah tuntas DAN auth sudah siap,
- * jadi tidak ada penundaan paksa saat auth butuh waktu lebih lama.
+ * Splash screen: logo dan slogan. Selesai kalau waktu tayang sudah cukup
+ * DAN auth sudah siap, jadi tidak ada penundaan paksa saat auth butuh waktu lebih lama.
  *
- * quick: pemuatan ulang dalam sesi yang sama, hanya logo tanpa koreografi.
+ * quick: pemuatan ulang dalam sesi yang sama, tayang lebih singkat.
  */
 
-const FULL_MS = 2000;
-const QUICK_MS = 350;
-const REDUCED_MS = 700;
+const FULL_MS = 3400;
+const QUICK_MS = 1400;
+const REDUCED_MS = 1800;
 const LEAVE_MS = 320;
 
 export default function SplashScreen({ ready, quick, onDone }) {
@@ -63,25 +63,9 @@ export default function SplashScreen({ ready, quick, onDone }) {
 
       <div className="k-splash-body">
         <div className="k-splash-brand k-display">
-          <span className="k-brand-mark">K</span>
+          <LogoMark variant="white" size={44} animate />
           <span className="k-splash-name">Kanbify</span>
         </div>
-
-        {!quick && (
-          <div className="k-splash-board" aria-hidden="true">
-            <div className="k-splash-lane"><span>To Do</span></div>
-            <div className="k-splash-lane"><span>Doing</span></div>
-            <div className="k-splash-lane done"><span>Done</span></div>
-
-            <div className="k-splash-card">
-              <i /><i />
-              <svg className="k-splash-check" viewBox="0 0 24 24" width="16" height="16" fill="none"
-                stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12.5l4.5 4.5L19 7.5" />
-              </svg>
-            </div>
-          </div>
-        )}
 
         <p className="k-splash-tag" aria-hidden={quick ? 'true' : undefined}>
           <span>Move.</span> <span>Track.</span> <span>Done.</span>

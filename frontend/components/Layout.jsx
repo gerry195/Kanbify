@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { STAGE_IMAGE } from '../theme';
+import LogoMark from './LogoMark';
 
 import {
   Home,
@@ -32,7 +33,7 @@ export default function Layout({ currentPage, onNavigate, children }) {
 
       <header className="k-topbar">
         <div className="k-pill k-brand">
-          <span className="k-brand-mark">K</span>
+          <LogoMark variant="orange" size={34} />
           <span className="k-brand-name k-display">Kanbify</span>
         </div>
 

@@ -1,6 +1,6 @@
 /* Splash: pakai foto dan scrim yang sama dengan app (kelas dari glass.css),
    supaya layar ini larut ke dashboard tanpa lompat warna.
-   Gerak hanya sekali, selama sekitar 1,6 detik, lalu hilang. */
+   Logo bergerak sekali di awal, lalu tayang sekitar 3,4 detik sebelum hilang. */
 
 .k-splash {
   position: fixed;
@@ -9,11 +9,13 @@
   display: grid;
   place-items: center;
   overflow: hidden;
-  background: #cfcabc;
-  color: var(--k-ink);
+  background: #1b1a17;
+  color: #ffffff;
   font-family: var(--k-font-body);
   transition: opacity 0.32s ease;
 }
+/* Latar gelap: scrim lebih pekat supaya logo putih dan teks tetap jelas di atas foto. */
+.k-splash .k-stage-scrim { background: rgba(27, 26, 23, 0.8); }
 .k-splash.leaving { opacity: 0; pointer-events: none; }
 
 .k-splash-body {
@@ -29,70 +31,25 @@
   display: flex;
   align-items: center;
   gap: 11px;
-  animation: k-fade 0.45s ease backwards;
+  animation: k-fade 0.45s ease 0.2s backwards;
 }
-.k-splash-brand .k-brand-mark { width: 42px; height: 42px; font-size: 20px; }
-.k-splash-name { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; }
+.k-splash-name { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; color: #ffffff; }
 
-/* Papan mini: tiga lajur, satu kartu */
+/* Logo: empat kotak terbang dari pusat ke posisinya, lalu logo utuh.
+   Hanya dipakai di splash; di navbar logo tampil diam. */
 
-.k-splash-board {
-  --lane: 92px;
-  --gap: 12px;
-  position: relative;
-  display: flex;
-  gap: var(--gap);
-  animation: k-fade 0.45s ease 0.1s backwards;
+.k-logo-anim .k-logo-tile {
+  animation: k-tile-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 110ms + 80ms);
 }
-.k-splash-lane {
-  width: var(--lane);
-  height: 132px;
-  box-sizing: border-box;
-  padding: 9px 10px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-}
-.k-splash-lane span {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--k-ink-2);
+.k-splash.quick .k-logo-anim .k-logo-tile { animation-duration: 0.35s; animation-delay: 0ms; }
+
+@keyframes k-tile-in {
+  from { transform: translate(var(--dx), var(--dy)) scale(0.4); opacity: 0; }
+  to { transform: none; opacity: 1; }
 }
 
-.k-splash-card {
-  position: absolute;
-  top: 36px;
-  left: 6px;
-  width: calc(var(--lane) - 12px);
-  height: 52px;
-  box-sizing: border-box;
-  padding: 11px 11px 0;
-  border-radius: 10px;
-  background: #fff;
-  border-left: 4px solid var(--k-orange);
-  box-shadow: 0 8px 18px -8px rgba(20, 16, 8, 0.45);
-  animation:
-    k-card-travel 1.45s cubic-bezier(0.65, 0, 0.35, 1) 0.45s both,
-    k-card-tone 1.45s steps(1, end) 0.45s both;
-}
-.k-splash-card i {
-  display: block;
-  height: 6px;
-  margin-bottom: 7px;
-  border-radius: 3px;
-  background: #e8e4d9;
-}
-.k-splash-card i:nth-child(2) { width: 60%; }
-
-.k-splash-check {
-  position: absolute;
-  right: 8px;
-  bottom: 7px;
-  color: var(--k-green);
-  animation: k-check-pop 0.3s ease 1.8s backwards;
-}
-
-/* Slogan muncul kata demi kata, sinkron dengan lajur yang dilewati kartu */
+/* Slogan muncul kata demi kata */
 
 .k-splash-tag {
   margin: 0;
@@ -100,40 +57,17 @@
   font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.06em;
-  color: var(--k-ink-2);
+  color: rgba(255, 255, 255, 0.72);
 }
 .k-splash-tag span { animation: k-fade 0.35s ease backwards; }
-.k-splash-tag span:nth-child(1) { animation-delay: 0.5s; }
-.k-splash-tag span:nth-child(2) { animation-delay: 1.05s; }
-.k-splash-tag span:nth-child(3) { animation-delay: 1.65s; color: var(--k-ink); }
+.k-splash-tag span:nth-child(1) { animation-delay: 0.9s; }
+.k-splash-tag span:nth-child(2) { animation-delay: 1.5s; }
+.k-splash-tag span:nth-child(3) { animation-delay: 2.1s; color: #ffffff; }
 .k-splash.quick .k-splash-tag span { animation-delay: 0s; }
-
-@keyframes k-card-travel {
-  0%   { transform: translateX(0); }
-  30%  { transform: translateX(0); }
-  50%  { transform: translateX(calc(var(--lane) + var(--gap))); }
-  72%  { transform: translateX(calc(var(--lane) + var(--gap))); }
-  92%, 100% { transform: translateX(calc((var(--lane) + var(--gap)) * 2)); }
-}
-/* Garis oranye jadi hijau saat kartu masuk lajur Done. */
-@keyframes k-card-tone {
-  0%   { border-left-color: var(--k-orange); }
-  92%  { border-left-color: var(--k-green); }
-  100% { border-left-color: var(--k-green); }
-}
-@keyframes k-check-pop {
-  from { opacity: 0; transform: scale(0.4); }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .k-splash-brand,
-  .k-splash-board,
-  .k-splash-tag span,
-  .k-splash-check { animation: none; }
-  .k-splash-card {
-    animation: none;
-    transform: translateX(calc((var(--lane) + var(--gap)) * 2));
-    border-left-color: var(--k-green);
-  }
+  .k-logo-anim .k-logo-tile,
+  .k-splash-tag span { animation: none; }
   .k-splash { transition: none; }
 }

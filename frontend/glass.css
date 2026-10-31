@@ -124,17 +124,6 @@
   padding: 0 18px 0 7px;
   flex-shrink: 0;
 }
-.k-brand-mark {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: var(--k-orange);
-  color: #fff;
-  display: grid;
-  place-items: center;
-  font-size: 16px;
-  font-weight: 800;
-}
 .k-brand-name { font-size: 17px; font-weight: 700; }
 
 .k-nav {

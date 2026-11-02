@@ -16,7 +16,7 @@ Gantt Chart, dan menerima notifikasi aktivitas.
 
 ### Statistik Tim
 
-![Statistik Tim Kanbify](frontend/screenshot/statteam.png)
+![Statistik Tim Kanbify](frontend/screenshot/statsteam.png)
 
 ## Fitur
 

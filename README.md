@@ -2,6 +2,22 @@
 
 Aplikasi manajemen tugas berbasis papan Kanban untuk tim kecil. Anggota board bisa membagi tugas, melacak waktu pengerjaan, melihat jadwal di Gantt Chart, dan menerima notifikasi aktivitas.
 
+## Preview Aplikasi
+
+Berikut beberapa tampilan aplikasi Kanbify:
+
+<p align="center">
+  <img src="frontend/screenshot/splashscreen.png" alt="Splash Screen Kanbify" width="80%">
+</p>
+
+<p align="center">
+  <img src="frontend/screenshot/dashboard.png" alt="Dashboard Kanbify" width="80%">
+</p>
+
+<p align="center">
+  <img src="frontend/screenshot/statteam.png" alt="Statistik Tim Kanbify" width="80%">
+</p>
+
 ## Fitur
 
 - **Autentikasi**: daftar, masuk, keluar, dan ubah profil (termasuk foto).

@@ -1,48 +1,67 @@
 # Kanbify
 
-Aplikasi manajemen tugas berbasis papan Kanban untuk tim kecil. Anggota board bisa membagi tugas, melacak waktu pengerjaan, melihat jadwal di Gantt Chart, dan menerima notifikasi aktivitas.
+Aplikasi manajemen tugas berbasis papan Kanban untuk tim kecil. Anggota
+board bisa membagi tugas, melacak waktu pengerjaan, melihat jadwal di
+Gantt Chart, dan menerima notifikasi aktivitas.
 
 ## Preview Aplikasi
 
-Berikut beberapa tampilan aplikasi Kanbify:
+### Splash Screen
 
-<p align="center">
-  <img src="frontend/screenshot/splashscreen.png" alt="Splash Screen Kanbify" width="80%">
-</p>
+![Splash Screen Kanbify](frontend/screenshot/splashscreen.png)
 
-<p align="center">
-  <img src="frontend/screenshot/dashboard.png" alt="Dashboard Kanbify" width="80%">
-</p>
+### Dashboard
 
-<p align="center">
-  <img src="frontend/screenshot/statteam.png" alt="Statistik Tim Kanbify" width="80%">
-</p>
+![Dashboard Kanbify](frontend/screenshot/dashboard.png)
+
+### Statistik Tim
+
+![Statistik Tim Kanbify](frontend/screenshot/statteam.png)
 
 ## Fitur
 
-- **Autentikasi**: daftar, masuk, keluar, dan ubah profil (termasuk foto).
-- **Board**: buat board, bintangi board favorit, ubah latar belakang, hapus board.
-- **Undang anggota**: bagikan kode undangan, anggota lain bergabung lewat kode. Peran admin dan member; admin ditandai mahkota di samping judul board.
-- **Kanban**: kolom To Do, In Progress, Done, plus Backlog. Tugas bisa di-drag antar kolom.
-- **Kartu tugas**: prioritas, penanggung jawab, rentang tanggal, chip sisa waktu, dan timer play/pause di kartu In Progress.
-- **Gantt Chart**: jadwal tugas dari tanggal mulai sampai deadline, dengan zoom Minggu/Bulan dan garis hari ini.
-- **Files**: unggah dan unduh file per board.
-- **Statistik tim**: statistik per board (distribusi status, beban per anggota, prioritas dan keterlambatan, waktu terlacak).
-- **Kalender**: kalender tenggat semua board ada di bawah panel statistik Dashboard.
-- **Notifikasi**: lonceng di dashboard berisi aktivitas anggota (status berubah, tugas diedit atau dihapus). Ringkasannya juga dikirim ke email anggota tiap 10 menit.
+-   **Autentikasi**: daftar, masuk, keluar, dan ubah profil (termasuk
+    foto).
+-   **Board**: buat board, bintangi board favorit, ubah latar belakang,
+    hapus board.
+-   **Undang anggota**: bagikan kode undangan, anggota lain bergabung
+    lewat kode. Peran admin dan member; admin ditandai mahkota di
+    samping judul board.
+-   **Kanban**: kolom To Do, In Progress, Done, plus Backlog. Tugas bisa
+    di-drag antar kolom.
+-   **Kartu tugas**: prioritas, penanggung jawab, rentang tanggal, chip
+    sisa waktu, dan timer play/pause di kartu In Progress.
+-   **Gantt Chart**: jadwal tugas dari tanggal mulai sampai deadline,
+    dengan zoom Minggu/Bulan dan garis hari ini.
+-   **Files**: unggah dan unduh file per board.
+-   **Statistik tim**: statistik per board (distribusi status, beban per
+    anggota, prioritas dan keterlambatan, waktu terlacak).
+-   **Kalender**: kalender tenggat semua board ada di bawah panel
+    statistik Dashboard.
+-   **Notifikasi**: lonceng di dashboard berisi aktivitas anggota
+    (status berubah, tugas diedit atau dihapus). Ringkasannya juga
+    dikirim ke email anggota tiap 10 menit.
 
 ## Teknologi
 
-| Bagian | Isi |
-| --- | --- |
-| Frontend | React 18, Vite, Tailwind CSS, lucide-react, animejs, react-router-dom |
-| Backend | Laravel 13, Laravel Sanctum |
-| Database | MySQL |
-| Email | Laravel Mail lewat Gmail SMTP, antrean database |
+  -----------------------------------------------------------------------
+  Bagian                              Isi
+  ----------------------------------- -----------------------------------
+  Frontend                            React 18, Vite, Tailwind CSS,
+                                      lucide-react, animejs,
+                                      react-router-dom
+
+  Backend                             Laravel 13, Laravel Sanctum
+
+  Database                            MySQL
+
+  Email                               Laravel Mail lewat Gmail SMTP,
+                                      antrean database
+  -----------------------------------------------------------------------
 
 ## Struktur folder
 
-```
+``` text
 kanbify/
 ├── backend/    # API Laravel
 └── frontend/   # Aplikasi React (Vite)
@@ -50,13 +69,13 @@ kanbify/
 
 ## Prasyarat
 
-- PHP 8.3 atau lebih baru dan Composer
-- Node.js 18 atau lebih baru
-- MySQL
+-   PHP 8.3 atau lebih baru dan Composer
+-   Node.js 18 atau lebih baru
+-   MySQL
 
 ## Menjalankan backend
 
-```bash
+``` bash
 cd backend
 composer install
 cp .env.example .env
@@ -65,7 +84,7 @@ php artisan key:generate
 
 Atur koneksi database di `.env`:
 
-```env
+``` env
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
@@ -76,7 +95,7 @@ DB_PASSWORD=
 
 Lalu:
 
-```bash
+``` bash
 php artisan migrate
 php artisan serve
 ```
@@ -87,7 +106,7 @@ API berjalan di `http://localhost:8000/api`.
 
 Notifikasi dikirim sebagai ringkasan per 10 menit. Atur di `.env`:
 
-```env
+``` env
 MAIL_MAILER=smtp
 MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
@@ -101,9 +120,10 @@ QUEUE_CONNECTION=database
 APP_FRONTEND_URL=http://localhost:5173
 ```
 
-`MAIL_PASSWORD` harus berupa **App Password** Gmail, bukan kata sandi akun. Jalankan dua proses ini di terminal terpisah:
+`MAIL_PASSWORD` harus berupa **App Password** Gmail, bukan kata sandi
+akun. Jalankan dua proses ini di terminal terpisah:
 
-```bash
+``` bash
 php artisan queue:work
 php artisan schedule:work
 ```
@@ -112,45 +132,71 @@ Panduan lengkap ada di `backend/NOTIFIKASI-EMAIL.md`.
 
 ## Menjalankan frontend
 
-```bash
+``` bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Aplikasi terbuka di `http://localhost:5173`. Secara bawaan frontend memanggil `http://localhost:8000/api`. Untuk mengubahnya, buat `frontend/.env`:
+Aplikasi terbuka di `http://localhost:5173`. Secara bawaan frontend
+memanggil `http://localhost:8000/api`. Untuk mengubahnya, buat
+`frontend/.env`:
 
-```env
+``` env
 VITE_API_URL=http://localhost:8000/api
 ```
 
 Build produksi:
 
-```bash
+``` bash
 npm run build
 ```
 
 ## Endpoint API
 
-Semua endpoint selain `auth/register` dan `auth/login` memerlukan token Sanctum.
+Semua endpoint selain `auth/register` dan `auth/login` memerlukan token
+Sanctum.
 
-| Kelompok | Endpoint |
-| --- | --- |
-| Auth | `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me` |
-| Profil | `/user/profile` |
-| Board | `/boards`, `/boards/{id}`, `/boards/join`, `/boards/{id}/star`, `/boards/{id}/appearance` |
-| Anggota | `/boards/{id}/members`, `/boards/{id}/members/{userId}` |
-| Tugas | `/boards/{id}/tasks`, `/tasks`, `/tasks/{id}` |
-| File | `/boards/{id}/files`, `/boards/{id}/files/{fileId}` |
-| Statistik | `/stats`, `/boards/{id}/stats` |
-| Kalender | `/calendar/tasks` |
-| Notifikasi | `/notifications`, `/notifications/{id}/read`, `/notifications/read-all` |
+  -----------------------------------------------------------------------
+  Kelompok                            Endpoint
+  ----------------------------------- -----------------------------------
+  Auth                                `POST /auth/register`,
+                                      `POST /auth/login`,
+                                      `POST /auth/logout`, `GET /auth/me`
+
+  Profil                              `/user/profile`
+
+  Board                               `/boards`, `/boards/{id}`,
+                                      `/boards/join`,
+                                      `/boards/{id}/star`,
+                                      `/boards/{id}/appearance`
+
+  Anggota                             `/boards/{id}/members`,
+                                      `/boards/{id}/members/{userId}`
+
+  Tugas                               `/boards/{id}/tasks`, `/tasks`,
+                                      `/tasks/{id}`
+
+  File                                `/boards/{id}/files`,
+                                      `/boards/{id}/files/{fileId}`
+
+  Statistik                           `/stats`, `/boards/{id}/stats`
+
+  Kalender                            `/calendar/tasks`
+
+  Notifikasi                          `/notifications`,
+                                      `/notifications/{id}/read`,
+                                      `/notifications/read-all`
+  -----------------------------------------------------------------------
 
 ## Pemecahan masalah
 
-- **`Table 'kanbify.board_notifications' doesn't exist`**: jalankan `php artisan migrate`.
-- **Email tidak terkirim**: pastikan `queue:work` dan `schedule:work` berjalan, dan `MAIL_PASSWORD` memakai App Password.
-- **Frontend gagal memanggil API**: cek `VITE_API_URL` dan pastikan backend berjalan di port yang sama.
+-   **`Table 'kanbify.board_notifications' doesn't exist`**: jalankan
+    `php artisan migrate`.
+-   **Email tidak terkirim**: pastikan `queue:work` dan `schedule:work`
+    berjalan, dan `MAIL_PASSWORD` memakai App Password.
+-   **Frontend gagal memanggil API**: cek `VITE_API_URL` dan pastikan
+    backend berjalan di port yang sama.
 
 ## Lisensi
 

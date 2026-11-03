@@ -54,7 +54,3 @@ Gantt Chart, dan menerima notifikasi aktivitas.
   Backend                             Laravel 13, Laravel Sanctum
 
   Database                            MySQL
-
-  Email                               Laravel Mail lewat Gmail SMTP,
-                                      antrean database
-  -----------------------------------------------------------------------
